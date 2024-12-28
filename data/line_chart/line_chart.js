@@ -97,18 +97,22 @@ d3.json("/data/dataset.json").then(data => {
 
     function updateChart(country, viewMode) {
         const countryData = data.links.filter(link => link.target === country);
-
+    
         let linesData;
         if (viewMode === "disciplines") {
             linesData = Array.from(
                 d3.group(countryData, d => d.source),
                 ([key, values]) => ({
                     key,
-                    values: d3.rollups(
-                        values.flatMap(d => d.attr),
-                        v => v.length,
-                        d => +d.year
-                    ).map(([year, count]) => ({ year, count }))
+                    values: computeCumulative(
+                        fillMissingYears(
+                            d3.rollups(
+                                values.flatMap(d => d.attr),
+                                v => v.length,
+                                d => +d.year
+                            ).map(([year, count]) => ({ year, count }))
+                        )
+                    )
                 })
             );
         } else if (viewMode === "medals") {
@@ -116,23 +120,27 @@ d3.json("/data/dataset.json").then(data => {
                 d3.group(countryData.flatMap(d => d.attr), d => d.medal),
                 ([key, values]) => ({
                     key,
-                    values: d3.rollups(
-                        values,
-                        v => v.length,
-                        d => +d.year
-                    ).map(([year, count]) => ({ year, count }))
+                    values: computeCumulative(
+                        fillMissingYears(
+                            d3.rollups(
+                                values,
+                                v => v.length,
+                                d => +d.year
+                            ).map(([year, count]) => ({ year, count }))
+                        )
+                    )
                 })
             );
         }
-
+    
         x.domain(d3.extent(linesData.flatMap(d => d.values), d => d.year));
         y.domain([0, d3.max(linesData.flatMap(d => d.values), d => d.count)]);
-
+    
         svg.select(".x-axis").call(d3.axisBottom(x).tickFormat(d3.format("d")));
         svg.select(".y-axis").call(d3.axisLeft(y));
-
+    
         const lines = svg.selectAll(".line").data(linesData, d => d.key);
-
+    
         lines.enter()
             .append("path")
             .attr("class", "line")
@@ -144,10 +152,43 @@ d3.json("/data/dataset.json").then(data => {
             .transition()
             .duration(750)
             .attr("d", d => line(d.values));
-
+    
         lines.exit().remove();
-
-        // Aggiorno legenda
+    
+        // Aggiorna la legenda
         updateLegend(linesData, viewMode);
     }
+    
+    // Funzione per riempire gli anni mancanti con un valore costante (ultimo noto)
+    function fillMissingYears(data) {
+        const allYears = d3.range(
+            d3.min(data, d => d.year),
+            d3.max(data, d => d.year) + 1
+        );
+    
+        const filledData = [];
+        let lastValue = 0;
+    
+        allYears.forEach(year => {
+            const match = data.find(d => d.year === year);
+            if (match) {
+                lastValue = match.count;
+                filledData.push(match);
+            } else {
+                filledData.push({ year, count: lastValue });
+            }
+        });
+    
+        return filledData;
+    }
+    
+    // Funzione per calcolare i valori cumulativi
+    function computeCumulative(data) {
+        let cumulativeCount = 0;
+        return data.map(d => {
+            cumulativeCount += d.count;
+            return { year: d.year, count: cumulativeCount };
+        });
+    }
+    
 });
