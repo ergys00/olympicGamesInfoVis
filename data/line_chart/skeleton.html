@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olympic Medal Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Olympic Medal Visualization</h1>
+    <div>
+        <label for="country-select">Select Country:</label>
+        <select id="country-select"></select>
+    </div>
+    <div>
+        <label>
+            <input type="radio" name="view-mode" value="disciplines" checked>
+            View by Disciplines
+        </label>
+        <label>
+            <input type="radio" name="view-mode" value="medals">
+            View by Medal Types
+        </label>
+    </div>
+    <div id="chart-container">
+        <div id="chart"></div>
+        <div id="legend"></div>
+    </div>
+
+    <script src="line_chart.js"></script>
+</body>
+</html>
