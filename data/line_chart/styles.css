@@ -41,3 +41,12 @@ svg {
     min-width: 150px;
     font-size: 14px;
 }
+
+.grid line {
+    stroke: #ddd;
+    stroke-opacity: 0.7;
+}
+
+.grid path {
+    display: none; /* Nasconde i bordi degli assi nella griglia */
+}
