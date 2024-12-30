@@ -1,56 +1,88 @@
+/* Miglioramento dello stile generale */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: #f4f4f9; /* Sfondo più chiaro */
+    color: #333;
 }
+
 #dashboard {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
     width: 100%;
+    max-width: 1200px;
 }
+
 .chart-container {
-    margin: 10px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
+    margin: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
+
 .chart-title {
     text-align: center;
+    font-size: 20px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    color: #007BFF;
 }
+
 svg {
     display: block;
     margin: auto;
+    max-width: 100%;
 }
+
+/* Tooltip migliorato */
 .tooltip {
     position: absolute;
-    background: lightgray;
-    padding: 5px;
-    border-radius: 5px;
+    background: rgba(50, 50, 50, 0.9);
+    color: white;
+    padding: 8px 10px;
+    border-radius: 8px;
     display: none;
     pointer-events: none;
+    font-size: 14px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
 }
+
+/* Stile per la legenda */
 #legend {
     margin-left: 20px;
     min-width: 150px;
     font-size: 14px;
+    color: #555;
 }
 
+/* Numeri sugli assi più grandi */
+.x-axis text,
+.y-axis text {
+    font-size: 16px; /* Dimensione aumentata */
+    fill: #333; /* Colore più scuro */
+    font-weight: bold; /* Numeri in grassetto */
+}
+
+/* Linee della griglia più visibili */
 .grid line {
-    stroke: #ddd;
-    stroke-opacity: 0.7;
+    stroke: #bbb; /* Colore grigio medio per maggiore visibilità */
+    stroke-opacity: 1; /* Più opache */
+    stroke-width: 1; /* Linee più spesse */
 }
 
 .grid path {
-    display: none; /* Nasconde i bordi degli assi nella griglia */
+    display: none; /* Nasconde i bordi degli assi */
 }
 
+/* Pulsanti più grandi e moderni */
 button {
     position: absolute;
     top: 20px;
@@ -58,13 +90,16 @@ button {
     background-color: #007BFF;
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
+    padding: 10px 20px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 button:hover {
     background-color: #0056b3;
+    transform: scale(1.05);
 }

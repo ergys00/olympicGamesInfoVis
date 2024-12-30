@@ -78,8 +78,7 @@ const tooltip = d3
 // Variabile per tracciare la selezione corrente
 let activeLegendKey = null;
 // Variabile globale per memorizzare gli anni delle Olimpiadi
-let olympicYears; 
-
+let olympicYears;
 
 // Funzione per aggiornare la griglia
 function updateGrid() {
@@ -107,10 +106,9 @@ function updateGrid() {
 
 // Caricamento del dataset
 d3.json("/data/dataset.json").then((data) => {
-
-    olympicYears = Array.from(
-        new Set(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)))
-    )
+  olympicYears = Array.from(
+    new Set(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)))
+  )
     .filter((year) => ![1916, 1940, 1944].includes(year)) // Escludi gli anni non validi
     .sort((a, b) => a - b);
   // Trova l'anno minimo e massimo
@@ -135,35 +133,37 @@ d3.json("/data/dataset.json").then((data) => {
     (interval) => !(interval[0] === 2016 && interval[1] === 2020)
   );
   allIntervals = allIntervals
-  .map((interval) => {
-    // Modifica l'intervallo 1896-1916 in 1896-1912
-    if (interval[0] === 1896 && interval[1] === 1916) {
-      return [1896, 1912];
-    }
-    // Unisci l'intervallo 1996-2016 e 2016-2020 in 1996-2020
-    if (interval[0] === 1996 && interval[1] === 2016) {
-      return [1996, 2020];
-    }
-    // Mantieni tutti gli altri intervalli intatti
-    return interval;
-  })
-  .filter((interval) => {
-    // Filtra fuori gli intervalli che contengono esattamente 1916, 1940, o 1944
-    const excludedYears = [1916, 1940, 1944];
-    return !excludedYears.some((year) => interval.includes(year));
-  });
+    .map((interval) => {
+      // Modifica l'intervallo 1896-1916 in 1896-1912
+      if (interval[0] === 1896 && interval[1] === 1916) {
+        return [1896, 1912];
+      }
+      // Unisci l'intervallo 1996-2016 e 2016-2020 in 1996-2020
+      if (interval[0] === 1996 && interval[1] === 2016) {
+        return [1996, 2020];
+      }
+      // Mantieni tutti gli altri intervalli intatti
+      return interval;
+    })
+    .filter((interval) => {
+      // Filtra fuori gli intervalli che contengono esattamente 1916, 1940, o 1944
+      const excludedYears = [1916, 1940, 1944];
+      return !excludedYears.some((year) => interval.includes(year));
+    });
 
-// Aggiungi eventuali intervalli mancanti dopo la rimozione
-const updatedIntervals = [];
-for (let i = 0; i < allIntervals.length - 1; i++) {
-  const current = allIntervals[i];
-  const next = allIntervals[i + 1];
-  // Aggiungi intervalli intermedi mancanti
-  if (current[1] !== next[0]) {
-    updatedIntervals.push([current[1], next[0]]);
+  // Aggiungi eventuali intervalli mancanti dopo la rimozione
+  const updatedIntervals = [];
+  for (let i = 0; i < allIntervals.length - 1; i++) {
+    const current = allIntervals[i];
+    const next = allIntervals[i + 1];
+    // Aggiungi intervalli intermedi mancanti
+    if (current[1] !== next[0]) {
+      updatedIntervals.push([current[1], next[0]]);
+    }
   }
-}
-allIntervals = [...allIntervals, ...updatedIntervals].sort((a, b) => a[0] - b[0]);
+  allIntervals = [...allIntervals, ...updatedIntervals].sort(
+    (a, b) => a[0] - b[0]
+  );
 
   // Popolamento del menu a tendina per selezione intervalli
   const intervalSelect = d3.select("#interval-select");
@@ -177,7 +177,7 @@ allIntervals = [...allIntervals, ...updatedIntervals].sort((a, b) => a[0] - b[0]
 
   let currentInterval = allIntervals[0];
 
-  // Lista dei paesi con nome completo 
+  // Lista dei paesi con nome completo
   const countries = [
     ...new Set(
       data.nodes.filter((d) => d.noc).map((d) => ({ id: d.id, name: d.name }))
@@ -207,24 +207,23 @@ allIntervals = [...allIntervals, ...updatedIntervals].sort((a, b) => a[0] - b[0]
     updateChart(country, viewMode, currentInterval);
   });
 
+  // Variabile per tracciare lo stato del pulsante
+  let isTotalMedalsView = false;
 
-// Variabile per tracciare lo stato del pulsante
-let isTotalMedalsView = false;
-
-// Listener per il clic del pulsante
-d3.select("#toggle-total-medals").on("click", () => {
+  // Listener per il clic del pulsante
+  d3.select("#toggle-total-medals").on("click", () => {
     if (!isTotalMedalsView) {
       // Mostra i risultati totali
       isTotalMedalsView = true;
       d3.select("#toggle-total-medals").text("Resetta Risultati");
-  
+
       const country = select.property("value");
-  
+
       // Filtra i dati per il paese selezionato
       const totalMedalsData = data.links
         .filter((link) => link.target === country)
         .flatMap((d) => d.attr);
-  
+
       // Raggruppa per anno e calcola il totale delle medaglie
       const totalMedals = d3
         .rollups(
@@ -233,35 +232,31 @@ d3.select("#toggle-total-medals").on("click", () => {
           (d) => +d.year
         )
         .map(([year, count]) => ({ year, count }));
-  
+
       // Riempie i dati mancanti per tutti gli anni olimpici
       const filledTotalMedals = fillMissingYears(totalMedals, olympicYears);
-  
+
       // Aggiorna l'asse X per includere tutti gli anni olimpici
       x.domain(d3.extent(olympicYears));
-  
+
       // Filtra gli anni di olympicYears per mostrare un sottoinsieme leggibile (es. ogni 4 anni)
       const tickYears = olympicYears.filter((year, index) => index % 4 === 0);
-  
-      svg
-        .select(".x-axis")
-        .call(
-          d3.axisBottom(x)
-            .tickFormat(d3.format("d")) // Mostra gli anni come numeri interi
-            .tickValues(tickYears) // Mostra solo un sottoinsieme degli anni
-        );
-  
+
+      svg.select(".x-axis").call(
+        d3
+          .axisBottom(x)
+          .tickFormat(d3.format("d")) // Mostra gli anni come numeri interi
+          .tickValues(tickYears) // Mostra solo un sottoinsieme degli anni
+      );
+
       // Aggiorna l'asse Y in base ai valori totali
-      y.domain([
-        0,
-        Math.ceil(d3.max(filledTotalMedals, (d) => d.count)),
-      ]);
+      y.domain([0, Math.ceil(d3.max(filledTotalMedals, (d) => d.count))]);
       svg.select(".y-axis").call(d3.axisLeft(y));
-  
+
       // Rimuove tutte le altre linee e aree esistenti
       svg.selectAll(".line").remove();
       svg.selectAll(".area").remove();
-  
+
       // Aggiungi o aggiorna l'area sottesa per il totale delle medaglie
       svg
         .append("path")
@@ -269,7 +264,7 @@ d3.select("#toggle-total-medals").on("click", () => {
         .attr("class", "area total")
         .attr("fill", "rgba(0, 0, 0, 0.5)") // Nero trasparente per l'area
         .attr("d", area);
-  
+
       // Aggiungi o aggiorna la linea nera per il totale delle medaglie
       svg
         .append("path")
@@ -287,27 +282,44 @@ d3.select("#toggle-total-medals").on("click", () => {
             .style("top", `${event.pageY + 10}px`)
             .style("display", "inline-block")
             .html(`Totale Medaglie: ${totalMedals}`);
+
+          // Evidenzia la linea
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("stroke-width", 4) // Aumenta lo spessore
+            .attr("opacity", 1); // Rendi più visibile la linea
         })
         .on("mouseout", function () {
           // Nasconde il tooltip
           tooltip.style("display", "none");
+
+          // Ripristina lo stile originale della linea
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("stroke-width", 2) // Ripristina lo spessore
+            .attr("opacity", 0.8); // Ripristina l'opacità
         });
-  
+
       // Disabilita l'interazione con la legenda
       d3.selectAll(".legend-item").style("pointer-events", "none");
-  
+
       // Aggiungi un elemento alla legenda per "Tutte le Olimpiadi"
       const legendGroup = svg.select(".legend-group");
-  
+
       legendGroup
         .append("g")
         .attr("class", "legend-item total-legend")
-        .attr("transform", `translate(0, ${legendGroup.selectAll(".legend-item").size() * 20})`)
+        .attr(
+          "transform",
+          `translate(0, ${legendGroup.selectAll(".legend-item").size() * 20})`
+        )
         .append("rect")
         .attr("width", 15)
         .attr("height", 15)
         .attr("fill", "#000"); // Nero come la linea
-  
+
       legendGroup
         .select(".total-legend")
         .append("text")
@@ -316,46 +328,42 @@ d3.select("#toggle-total-medals").on("click", () => {
         .text("Tutte le Olimpiadi")
         .style("font-size", "12px")
         .style("alignment-baseline", "middle");
-  
+
       // Aggiorna la griglia per riflettere i nuovi domini
       updateGrid();
     } else {
       // Reset ai risultati iniziali
       isTotalMedalsView = false;
       d3.select("#toggle-total-medals").text("Mostra Medaglie Totali");
-  
+
       const country = select.property("value");
       const viewMode = "medals"; // Torna alla modalità iniziale
       updateChart(country, viewMode, currentInterval);
-  
+
       // Riabilita l'interazione con la legenda
       d3.selectAll(".legend-item").style("pointer-events", "auto");
-  
+
       // Rimuove l'elemento "Tutte le Olimpiadi" dalla legenda
       d3.select(".legend-item.total-legend").remove();
     }
   });
 
-
-  
-  
   // Event listener per cambio modalità di visualizzazione
   d3.selectAll('input[name="view-mode"]').on("change", () => {
     const viewMode = document.querySelector(
       'input[name="view-mode"]:checked'
     ).value;
-  
+
     // Mostra o nasconde il pulsante
     if (viewMode === "medals") {
       d3.select("#toggle-total-medals").style("display", "inline-block");
     } else {
       d3.select("#toggle-total-medals").style("display", "none");
     }
-  
+
     const country = select.property("value");
     updateChart(country, viewMode, currentInterval);
   });
-  
 
   // Event listener per cambio intervallo di anni
   intervalSelect.on("change", function () {
@@ -441,91 +449,89 @@ d3.select("#toggle-total-medals").on("click", () => {
 
     // Trova gli anni che appartengono all'intervallo corrente
     const allYears = olympicYears.filter(
-        (year) =>
-            year >= currentInterval[0] && year <= currentInterval[1]
+      (year) => year >= currentInterval[0] && year <= currentInterval[1]
     );
 
     // Rimuovi il primo anno dell'intervallo, se non è il primo intervallo
-    const filteredYears = currentInterval[0] === olympicYears[0]
+    const filteredYears =
+      currentInterval[0] === olympicYears[0]
         ? allYears
         : allYears.filter((year) => year !== currentInterval[0]);
 
     let linesData;
     if (viewMode === "disciplines") {
-        linesData = Array.from(
-            d3.group(countryData, (d) => d.source),
-            ([key, values]) => ({
-                key,
-                values: fillMissingYears(
-                    d3
-                        .rollups(
-                            values.flatMap((d) => d.attr),
-                            (v) => v.length,
-                            (d) => +d.year
-                        )
-                        .map(([year, count]) => ({ year, count })),
-                    filteredYears
-                ),
-            })
-        );
+      linesData = Array.from(
+        d3.group(countryData, (d) => d.source),
+        ([key, values]) => ({
+          key,
+          values: fillMissingYears(
+            d3
+              .rollups(
+                values.flatMap((d) => d.attr),
+                (v) => v.length,
+                (d) => +d.year
+              )
+              .map(([year, count]) => ({ year, count })),
+            filteredYears
+          ),
+        })
+      );
     } else if (viewMode === "medals") {
-        linesData = Array.from(
-            d3.group(
-                countryData.flatMap((d) => d.attr),
-                (d) => d.medal
-            ),
-            ([key, values]) => ({
-                key,
-                values: fillMissingYears(
-                    d3
-                        .rollups(
-                            values,
-                            (v) => v.length,
-                            (d) => +d.year
-                        )
-                        .map(([year, count]) => ({ year, count })),
-                    filteredYears
-                ),
-            })
-        );
+      linesData = Array.from(
+        d3.group(
+          countryData.flatMap((d) => d.attr),
+          (d) => d.medal
+        ),
+        ([key, values]) => ({
+          key,
+          values: fillMissingYears(
+            d3
+              .rollups(
+                values,
+                (v) => v.length,
+                (d) => +d.year
+              )
+              .map(([year, count]) => ({ year, count })),
+            filteredYears
+          ),
+        })
+      );
     }
 
     x.domain(d3.extent(filteredYears));
     y.domain([
-        0,
-        Math.ceil(
-            d3.max(
-                linesData.flatMap((d) => d.values),
-                (d) => d.count
-            )
-        ),
+      0,
+      Math.ceil(
+        d3.max(
+          linesData.flatMap((d) => d.values),
+          (d) => d.count
+        )
+      ),
     ]);
 
     svg
-        .select(".x-axis")
-        .call(
-            d3.axisBottom(x)
-                .tickFormat(d3.format("d"))
-                .tickValues(filteredYears)
-        );
+      .select(".x-axis")
+      .call(
+        d3.axisBottom(x).tickFormat(d3.format("d")).tickValues(filteredYears)
+      );
     svg.select(".y-axis").call(d3.axisLeft(y));
 
     const areas = svg.selectAll(".area").data(linesData, (d) => d.key);
 
     areas
-        .enter()
-        .append("path")
-        .attr("class", (d) => `area area-${d.key}`)
-        .attr("fill", (d) =>
-            viewMode === "medals" ? medalColors[d.key] : color(d.key)
-        )
-        .attr("opacity", 0.6) // Aumentata saturazione
-        .attr("id", (d) => `area-${d.key}`)
-        .attr("d", (d) => area(d.values))
-        .merge(areas)
-        .transition()
-        .duration(750)
-        .attr("d", (d) => area(d.values));
+      .enter()
+      .append("path")
+      .attr("class", (d) => `area area-${d.key}`)
+      .attr("fill", (d) =>
+        viewMode === "medals" ? medalColors[d.key] : color(d.key)
+      )
+      .attr("opacity", 0.6) // Aumentata saturazione
+      .attr("id", (d) => `area-${d.key}`)
+      .attr("d", (d) => area(d.values))
+      .merge(areas)
+      .transition()
+      .duration(750)
+      .attr("d", (d) => area(d.values));
 
     areas.exit().remove();
 
@@ -533,55 +539,54 @@ d3.select("#toggle-total-medals").on("click", () => {
 
     // Modifica del mouseover per mostrare solo il tooltip della selezione attiva
     lines
-        .enter()
-        .append("path")
-        .attr("class", (d) => `line line-${d.key}`)
-        .attr("id", (d) => `line-${d.key}`)
-        .attr("fill", "none")
-        .attr("stroke", (d) =>
-            viewMode === "medals" ? medalColors[d.key] : color(d.key)
-        )
-        .attr("stroke-width", 2)
-        .attr("d", (d) => line(d.values))
-        .on("mouseover", function (event, d) {
-            // Se c'è una selezione attiva, ignora le altre linee
-            if (activeLegendKey && d.key !== activeLegendKey) return;
+      .enter()
+      .append("path")
+      .attr("class", (d) => `line line-${d.key}`)
+      .attr("id", (d) => `line-${d.key}`)
+      .attr("fill", "none")
+      .attr("stroke", (d) =>
+        viewMode === "medals" ? medalColors[d.key] : color(d.key)
+      )
+      .attr("stroke-width", 2)
+      .attr("d", (d) => line(d.values))
+      .on("mouseover", function (event, d) {
+        // Se c'è una selezione attiva, ignora le altre linee
+        if (activeLegendKey && d.key !== activeLegendKey) return;
 
-            // Evidenzia la linea selezionata
-            d3.selectAll(".line, .area").style("opacity", 0.2);
-            d3.select(`#line-${d.key}`)
-                .style("opacity", 1)
-                .style("stroke-width", 4);
-            d3.select(`#area-${d.key}`).style("opacity", 0.5);
+        // Evidenzia la linea selezionata
+        d3.selectAll(".line, .area").style("opacity", 0.2);
+        d3.select(`#line-${d.key}`)
+          .style("opacity", 1)
+          .style("stroke-width", 4);
+        d3.select(`#area-${d.key}`).style("opacity", 0.5);
 
-            // Mostra il tooltip solo per la linea selezionata
-            const totalMedals = d3.sum(d.values, (v) => v.count);
-            tooltip
-                .style("left", `${event.pageX + 10}px`)
-                .style("top", `${event.pageY + 10}px`)
-                .style("display", "inline-block")
-                .html(`${d.key}: ${totalMedals} total medals`);
-        })
-        .on("mouseout", function () {
-            // Ripristina lo stato delle linee se non c'è una selezione attiva
-            if (!activeLegendKey) {
-                d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
-                d3.selectAll(".area").style("opacity", 0.6);
-            }
-            tooltip.style("display", "none");
-        })
-        .merge(lines)
-        .transition()
-        .duration(750)
-        .attr("d", (d) => line(d.values));
+        // Mostra il tooltip solo per la linea selezionata
+        const totalMedals = d3.sum(d.values, (v) => v.count);
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`)
+          .style("display", "inline-block")
+          .html(`${d.key}: ${totalMedals} total medals`);
+      })
+      .on("mouseout", function () {
+        // Ripristina lo stato delle linee se non c'è una selezione attiva
+        if (!activeLegendKey) {
+          d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
+          d3.selectAll(".area").style("opacity", 0.6);
+        }
+        tooltip.style("display", "none");
+      })
+      .merge(lines)
+      .transition()
+      .duration(750)
+      .attr("d", (d) => line(d.values));
 
     lines.exit().remove();
 
     updateLegend(linesData, viewMode);
 
     updateGrid(); // Aggiorna la griglia
-}
-
+  }
 
   // Funzione per riempire gli anni mancanti con valori predefiniti
   function fillMissingYears(data, allYears) {
