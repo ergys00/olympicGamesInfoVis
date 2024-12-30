@@ -1,7 +1,8 @@
 // Margini e dimensioni del grafico
-const margin = { top: 20, right: 300, bottom: 50, left: 50 }; // Spazio aggiuntivo a destra per la legenda
-const width = 1000 - margin.left - margin.right; // Grafico più grande
-const height = 500 - margin.top - margin.bottom;
+
+const margin = { top: 20, right: 300, bottom: 50, left: 50 };
+const width = 1200 - margin.left - margin.right; // Larghezza aumentata
+const height = 600 - margin.top - margin.bottom; // Altezza aumentata
 
 // Creazione dell'SVG nel div del grafico
 const svg = d3
@@ -10,7 +11,10 @@ const svg = d3
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
   .append("g")
-  .attr("transform", `translate(${margin.left}, ${margin.top})`);
+  .attr(
+    "transform",
+    `translate(${(margin.left + margin.right) / 2}, ${margin.top})` // Centro orizzontale
+  );
 
 // Scale per l'asse X e Y
 const x = d3.scaleTime().range([0, width]);
@@ -203,14 +207,155 @@ allIntervals = [...allIntervals, ...updatedIntervals].sort((a, b) => a[0] - b[0]
     updateChart(country, viewMode, currentInterval);
   });
 
+
+// Variabile per tracciare lo stato del pulsante
+let isTotalMedalsView = false;
+
+// Listener per il clic del pulsante
+d3.select("#toggle-total-medals").on("click", () => {
+    if (!isTotalMedalsView) {
+      // Mostra i risultati totali
+      isTotalMedalsView = true;
+      d3.select("#toggle-total-medals").text("Resetta Risultati");
+  
+      const country = select.property("value");
+  
+      // Filtra i dati per il paese selezionato
+      const totalMedalsData = data.links
+        .filter((link) => link.target === country)
+        .flatMap((d) => d.attr);
+  
+      // Raggruppa per anno e calcola il totale delle medaglie
+      const totalMedals = d3
+        .rollups(
+          totalMedalsData,
+          (v) => v.length,
+          (d) => +d.year
+        )
+        .map(([year, count]) => ({ year, count }));
+  
+      // Riempie i dati mancanti per tutti gli anni olimpici
+      const filledTotalMedals = fillMissingYears(totalMedals, olympicYears);
+  
+      // Aggiorna l'asse X per includere tutti gli anni olimpici
+      x.domain(d3.extent(olympicYears));
+  
+      // Filtra gli anni di olympicYears per mostrare un sottoinsieme leggibile (es. ogni 4 anni)
+      const tickYears = olympicYears.filter((year, index) => index % 4 === 0);
+  
+      svg
+        .select(".x-axis")
+        .call(
+          d3.axisBottom(x)
+            .tickFormat(d3.format("d")) // Mostra gli anni come numeri interi
+            .tickValues(tickYears) // Mostra solo un sottoinsieme degli anni
+        );
+  
+      // Aggiorna l'asse Y in base ai valori totali
+      y.domain([
+        0,
+        Math.ceil(d3.max(filledTotalMedals, (d) => d.count)),
+      ]);
+      svg.select(".y-axis").call(d3.axisLeft(y));
+  
+      // Rimuove tutte le altre linee e aree esistenti
+      svg.selectAll(".line").remove();
+      svg.selectAll(".area").remove();
+  
+      // Aggiungi o aggiorna l'area sottesa per il totale delle medaglie
+      svg
+        .append("path")
+        .datum(filledTotalMedals)
+        .attr("class", "area total")
+        .attr("fill", "rgba(0, 0, 0, 0.5)") // Nero trasparente per l'area
+        .attr("d", area);
+  
+      // Aggiungi o aggiorna la linea nera per il totale delle medaglie
+      svg
+        .append("path")
+        .datum(filledTotalMedals)
+        .attr("class", "line total")
+        .attr("fill", "none")
+        .attr("stroke", "#000") // Colore nero per la linea
+        .attr("stroke-width", 2)
+        .attr("d", line)
+        .on("mouseover", function (event, d) {
+          // Mostra il tooltip con il numero totale di medaglie
+          const totalMedals = d3.sum(d, (v) => v.count);
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY + 10}px`)
+            .style("display", "inline-block")
+            .html(`Totale Medaglie: ${totalMedals}`);
+        })
+        .on("mouseout", function () {
+          // Nasconde il tooltip
+          tooltip.style("display", "none");
+        });
+  
+      // Disabilita l'interazione con la legenda
+      d3.selectAll(".legend-item").style("pointer-events", "none");
+  
+      // Aggiungi un elemento alla legenda per "Tutte le Olimpiadi"
+      const legendGroup = svg.select(".legend-group");
+  
+      legendGroup
+        .append("g")
+        .attr("class", "legend-item total-legend")
+        .attr("transform", `translate(0, ${legendGroup.selectAll(".legend-item").size() * 20})`)
+        .append("rect")
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", "#000"); // Nero come la linea
+  
+      legendGroup
+        .select(".total-legend")
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text("Tutte le Olimpiadi")
+        .style("font-size", "12px")
+        .style("alignment-baseline", "middle");
+  
+      // Aggiorna la griglia per riflettere i nuovi domini
+      updateGrid();
+    } else {
+      // Reset ai risultati iniziali
+      isTotalMedalsView = false;
+      d3.select("#toggle-total-medals").text("Mostra Medaglie Totali");
+  
+      const country = select.property("value");
+      const viewMode = "medals"; // Torna alla modalità iniziale
+      updateChart(country, viewMode, currentInterval);
+  
+      // Riabilita l'interazione con la legenda
+      d3.selectAll(".legend-item").style("pointer-events", "auto");
+  
+      // Rimuove l'elemento "Tutte le Olimpiadi" dalla legenda
+      d3.select(".legend-item.total-legend").remove();
+    }
+  });
+
+
+  
+  
   // Event listener per cambio modalità di visualizzazione
   d3.selectAll('input[name="view-mode"]').on("change", () => {
-    const country = select.property("value");
     const viewMode = document.querySelector(
       'input[name="view-mode"]:checked'
     ).value;
+  
+    // Mostra o nasconde il pulsante
+    if (viewMode === "medals") {
+      d3.select("#toggle-total-medals").style("display", "inline-block");
+    } else {
+      d3.select("#toggle-total-medals").style("display", "none");
+    }
+  
+    const country = select.property("value");
     updateChart(country, viewMode, currentInterval);
   });
+  
 
   // Event listener per cambio intervallo di anni
   intervalSelect.on("change", function () {
