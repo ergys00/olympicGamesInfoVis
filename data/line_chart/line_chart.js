@@ -1,5 +1,4 @@
 // Margini e dimensioni del grafico
-
 const margin = { top: 20, right: 300, bottom: 50, left: 50 };
 const width = 1200 - margin.left - margin.right; // Larghezza aumentata
 const height = 600 - margin.top - margin.bottom; // Altezza aumentata
@@ -22,19 +21,23 @@ const y = d3.scaleLinear().range([height, 0]);
 
 // Scala di colori per le linee
 const color = d3.scaleOrdinal([
-  "#1f77b4",
-  "#ff7f0e",
-  "#2ca02c",
-  "#d62728",
-  "#9467bd",
-  "#8c564b",
-  "#e377c2",
-  "#7f7f7f",
-  "#bcbd22",
-  "#17becf",
+  "#6FA3EF", // Blu Intenso
+  "#71C687", // Verde Intenso
+  "#FFD966", // Giallo Intenso
+  "#FFA07A", // Arancione Intenso
+  "#FF6FAF", // Rosa Intenso
+  "#BA88FF", // Viola Intenso
+  "#7FC4FF", // Celeste Intenso
+  "#FF8674", // Corallo Intenso
+  "#D8A9D8", // Lilla Intenso
+  "#86C791", // Menta Intensa
+  "#A3A3A3"  // Grigio Intenso
 ]);
 
-// Aggiunta degli assi
+
+
+
+// Aggiunta degli assi 
 svg
   .append("g")
   .attr("class", "x-axis")
@@ -249,8 +252,13 @@ d3.json("/data/dataset.json").then((data) => {
           .tickValues(tickYears) // Mostra solo un sottoinsieme degli anni
       );
 
-      // Aggiorna l'asse Y in base ai valori totali
-      y.domain([0, Math.ceil(d3.max(filledTotalMedals, (d) => d.count))]);
+      // Aggiorna l'asse Y per includere tutti i valori proporzionalmente
+      y.domain([
+        0,
+        Math.ceil(d3.max(filledTotalMedals, (d) => d.count) * 1.1), // Massimo +10%
+      ]);
+
+      // Aggiorna l'asse Y
       svg.select(".y-axis").call(d3.axisLeft(y));
 
       // Rimuove tutte le altre linee e aree esistenti
@@ -281,7 +289,7 @@ d3.json("/data/dataset.json").then((data) => {
             .style("left", `${event.pageX + 10}px`)
             .style("top", `${event.pageY + 10}px`)
             .style("display", "inline-block")
-            .html(`Totale Medaglie: ${totalMedals}`);
+            .html(`Medaglie Totali: ${totalMedals}`);
 
           // Evidenzia la linea
           d3.select(this)
@@ -377,7 +385,12 @@ d3.json("/data/dataset.json").then((data) => {
   });
 
   // Colori per le medaglie
-  const medalColors = { Gold: "#FFD700", Silver: "#C0C0C0", Bronze: "#CD7F32" };
+  const medalColors = {
+    Gold: "#ffdf80",   // Oro Pastello
+    Silver: "#d9d9d9", // Argento Pastello
+    Bronze: "#e4b89e"  // Bronzo Pastello
+  };
+  
 
   // Funzione per aggiornare la legenda
   function updateLegend(linesData, viewMode) {
@@ -443,7 +456,6 @@ d3.json("/data/dataset.json").then((data) => {
       });
   }
 
-  // Funzione principale di aggiornamento del grafico
   function updateChart(country, viewMode, currentInterval) {
     const countryData = data.links.filter((link) => link.target === country);
 
@@ -461,17 +473,20 @@ d3.json("/data/dataset.json").then((data) => {
     let linesData;
     if (viewMode === "disciplines") {
       linesData = Array.from(
-        d3.group(countryData, (d) => d.source),
+        d3.group(countryData.flatMap((d) => d.attr), (d) => d.sport),
         ([key, values]) => ({
           key,
           values: fillMissingYears(
-            d3
-              .rollups(
-                values.flatMap((d) => d.attr),
-                (v) => v.length,
-                (d) => +d.year
-              )
-              .map(([year, count]) => ({ year, count })),
+            Array.from(
+              d3.group(values, (d) => d.year),
+              ([year, entries]) => ({
+                year: +year,
+                count: entries.length,
+                gold: entries.filter((entry) => entry.medal === "Gold").length,
+                silver: entries.filter((entry) => entry.medal === "Silver").length,
+                bronze: entries.filter((entry) => entry.medal === "Bronze").length,
+              })
+            ),
             filteredYears
           ),
         })
@@ -537,7 +552,7 @@ d3.json("/data/dataset.json").then((data) => {
 
     const lines = svg.selectAll(".line").data(linesData, (d) => d.key);
 
-    // Modifica del mouseover per mostrare solo il tooltip della selezione attiva
+    // Modifica del mouseover per mostrare il tooltip con informazioni dettagliate
     lines
       .enter()
       .append("path")
@@ -552,21 +567,43 @@ d3.json("/data/dataset.json").then((data) => {
       .on("mouseover", function (event, d) {
         // Se c'è una selezione attiva, ignora le altre linee
         if (activeLegendKey && d.key !== activeLegendKey) return;
-
+    
         // Evidenzia la linea selezionata
         d3.selectAll(".line, .area").style("opacity", 0.2);
         d3.select(`#line-${d.key}`)
           .style("opacity", 1)
           .style("stroke-width", 4);
         d3.select(`#area-${d.key}`).style("opacity", 0.5);
+    
+        // Mostra il tooltip con tutti i dettagli solo in modalità "disciplines"
+        if (viewMode === "disciplines") {
+          const totalGold = d3.sum(d.values, (v) => v.gold || 0);
+          const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
+          const totalBronze = d3.sum(d.values, (v) => v.bronze || 0);
+          const totalMedals = d3.sum(d.values, (v) => v.count);
 
-        // Mostra il tooltip solo per la linea selezionata
-        const totalMedals = d3.sum(d.values, (v) => v.count);
-        tooltip
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
-          .style("display", "inline-block")
-          .html(`${d.key}: ${totalMedals} total medals`);
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY + 10}px`)
+            .style("display", "inline-block")
+            .html(`
+              <strong>${d.key}</strong><br>
+              Totale Medaglie: ${totalMedals}<br>
+              Oro: ${totalGold}<br>
+              Argento: ${totalSilver}<br>
+              Bronzo: ${totalBronze}
+            `);
+        } else if (viewMode === "medals") {
+          const totalMedals = d3.sum(d.values, (v) => v.count);
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY + 10}px`)
+            .style("display", "inline-block")
+            .html(`
+              <strong>${d.key}</strong><br>
+              Totale Medaglie: ${totalMedals}
+            `);
+        }
       })
       .on("mouseout", function () {
         // Ripristina lo stato delle linee se non c'è una selezione attiva
@@ -584,9 +621,10 @@ d3.json("/data/dataset.json").then((data) => {
     lines.exit().remove();
 
     updateLegend(linesData, viewMode);
-
     updateGrid(); // Aggiorna la griglia
   }
+
+
 
   // Funzione per riempire gli anni mancanti con valori predefiniti
   function fillMissingYears(data, allYears) {

@@ -13,15 +13,12 @@
         <label for="country-select">Seleziona Paese:</label>
         <select id="country-select"></select>
     </div>
-    <div>
-        <label>
-            <input type="radio" name="view-mode" value="disciplines" checked>
-            Visualizzazione per Discipline
-        </label>
-        <label>
-            <input type="radio" name="view-mode" value="medals">
-            Visualizzazione per tipo di medaglia
-        </label>
+    <div class="radio-container">
+        <input type="radio" id="disciplines" name="view-mode" value="disciplines" checked>
+        <label for="disciplines">Visualizzazione per Discipline</label>
+
+        <input type="radio" id="medals" name="view-mode" value="medals">
+        <label for="medals">Visualizzazione per tipo di medaglia</label>
     </div>
     <div>
         <label for="interval-select">Selezione Range Temporale:</label>
