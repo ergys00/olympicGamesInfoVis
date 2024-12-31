@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Olympic Data Dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #dashboard {
+            display: flex;
+            justify-content: space-between; /* Allinea gli elementi sulla stessa riga */
+            width: 100%;
+            max-width: 1800px; /* Limita la larghezza massima del dashboard */
+            margin: 0 auto; /* Centra il dashboard */
+        }
+        .chart-container {
+            flex: 1; /* Fai in modo che i contenitori occupino lo spazio disponibile */
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-sizing: border-box; /* Include padding e border nelle dimensioni */
+        }
+        #map {
+            flex: 2; /* La mappa occupa più spazio */
+        }
+        #barchart {
+            flex: 1; /* Il bar chart occupa meno spazio */
+        }
+        .chart-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        svg {
+            display: block;
+            margin: auto;
+            background: white;
+        }
+        .tooltip {
+            position: absolute;
+            background: lightgray;
+            padding: 5px;
+            border-radius: 5px;
+            display: none;
+            pointer-events: none;
+        }
+        #sports {
+            display: block;
+            margin: 10px auto;
+            padding: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+<div id="dashboard">
+    <div id="map" class="chart-container">
+        <div class="chart-title">Geospatial Medal Distribution</div>
+        <select id="sports"></select>
+        <svg></svg>
+    </div>
+    <div id="barchart" class="chart-container">
+        <div class="chart-title">Sports Medals Leaderboard</div>
+        <svg></svg>
+    </div>
+</div>
+<div class="tooltip"></div>
+</body>
+<script src="js/code.js"></script>
+</html>
