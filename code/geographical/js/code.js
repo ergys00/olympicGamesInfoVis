@@ -249,7 +249,7 @@ function updateVisualization(newGeoData) {
         .duration(750)
         .attr("fill", d => {
             const country = newGeoData.find(c => c.id === d.id);
-            return country ? colorScale(country.totalMedals) : "#eeeeee";
+            return country !== undefined && country.totalMedals !== 0 ? colorScale(country.totalMedals) : "#eeeeee";
         });
 
     // Update tooltip event listeners with the new data
@@ -258,8 +258,6 @@ function updateVisualization(newGeoData) {
 
 function getSportsMedalsForCountry(countryId, countryName) {
     const sportsMedals = {};
-    console.log(countryName)
-    console.log(countryId)
     realId = olympicData.nodes.find(c => {
         if (c.name === countryName)
             return true
@@ -274,7 +272,6 @@ function getSportsMedalsForCountry(countryId, countryName) {
             });
         }
     });
-    console.log(sportsMedals)
     return Object.entries(sportsMedals)
         .map(([sport, medals]) => ({sport, medals}))
         .sort((a, b) => b.medals - a.medals);
