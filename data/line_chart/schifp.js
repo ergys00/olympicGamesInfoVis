@@ -274,37 +274,42 @@ d3.json("/data/dataset.json").then((data) => {
         .attr("d", area);
 
       // Aggiungi o aggiorna la linea nera per il totale delle medaglie
-      svg.append("path")
-      .datum(filledTotalMedals)
-      .attr("class", "line total")
-      .attr("fill", "none")
-      .attr("stroke", "#000")
-      .attr("stroke-width", 2)
-      .attr("d", line)
-      .on("mouseover", function(event, d) {
-        // Highlight line and area
-        d3.select(this)
-          .style("opacity", 1)
-          .style("stroke-width", 4);
-        svg.select(".area.total")
-          .style("opacity", 0.5);
-          
-        const totalMedals = d3.sum(d, v => v.count);
-        tooltip
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
-          .style("display", "inline-block")
-          .html(`Medaglie Totali: ${totalMedals}`);
-      })
-      .on("mouseout", function() {
-        // Reset to normal state
-        d3.select(this)
-          .style("opacity", 1)
-          .style("stroke-width", 2);
-        svg.select(".area.total")
-          .style("opacity", 0.3);
-        tooltip.style("display", "none");
-      });
+      svg
+        .append("path")
+        .datum(filledTotalMedals)
+        .attr("class", "line total")
+        .attr("fill", "none")
+        .attr("stroke", "#000") // Colore nero per la linea
+        .attr("stroke-width", 2)
+        .attr("d", line)
+        .on("mouseover", function (event, d) {
+          // Mostra il tooltip con il numero totale di medaglie
+          const totalMedals = d3.sum(d, (v) => v.count);
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY + 10}px`)
+            .style("display", "inline-block")
+            .html(`Medaglie Totali: ${totalMedals}`);
+
+          // Evidenzia la linea
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("stroke-width", 4) // Aumenta lo spessore
+            .attr("opacity", 1); // Rendi più visibile la linea
+        })
+        .on("mouseout", function () {
+          // Nasconde il tooltip
+          tooltip.style("display", "none");
+
+          // Ripristina lo stile originale della linea
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("stroke-width", 2) // Ripristina lo spessore
+            .attr("opacity", 0.8); // Ripristina l'opacità
+        });
+
       // Disabilita l'interazione con la legenda
       d3.selectAll(".legend-item").style("pointer-events", "none");
 
@@ -398,45 +403,35 @@ d3.json("/data/dataset.json").then((data) => {
 
     // Creazione degli elementi della legenda
     legend
-  .selectAll(".legend-item")
-  .data(linesData)
-  .enter()
-  .append("g")
-  .attr("class", "legend-item")
-  .attr("transform", (d, i) => `translate(0, ${i * 20})`)
-  .style("cursor", "pointer")
-  .on("click", (_, d) => {
-    // Toggle active state
-    if (activeLegendKey === d.key) {
-      activeLegendKey = null;
-      // Reset all lines/areas
-      d3.selectAll(".line")
-        .style("opacity", 1)
-        .style("stroke-width", 2)
-        .classed("active", false);
-      d3.selectAll(".area")
-        .style("opacity", 0.6)
-        .classed("active", false);
-    } else {
-      activeLegendKey = d.key;
-      // Dim all lines/areas
-      d3.selectAll(".line")
-        .style("opacity", 0.2)
-        .style("stroke-width", 2)
-        .classed("active", false);
-      d3.selectAll(".area")
-        .style("opacity", 0.2)
-        .classed("active", false);
-      // Highlight selected line/area
-      d3.select(`#line-${d.key}`)
-        .style("opacity", 1)
-        .style("stroke-width", 4)
-        .classed("active", true);
-      d3.select(`#area-${d.key}`)
-        .style("opacity", 0.5)
-        .classed("active", true);
-    }
-  })
+      .selectAll(".legend-item")
+      .data(linesData)
+      .enter()
+      .append("g")
+      .attr("class", "legend-item")
+      .attr("transform", (d, i) => `translate(0, ${i * 20})`)
+      .style("cursor", "pointer")
+      .on("click", (_, d) => {
+        // Alterna lo stato attivo per l'elemento selezionato
+        activeLegendKey = activeLegendKey === d.key ? null : d.key;
+
+        // Gestisce l'evidenziazione
+        if (activeLegendKey) {
+          d3.selectAll(".line, .area").style("opacity", 0.2);
+          d3.select(`#line-${d.key}`)
+            .style("opacity", 1)
+            .classed("active", true)
+            .style("stroke-width", 4);
+          d3.select(`#area-${d.key}`)
+            .style("opacity", 0.5)
+            .classed("active", true);
+        } else {
+          d3.selectAll(".line")
+            .style("opacity", 1)
+            .style("stroke-width", 2)
+            .classed("active", false);
+          d3.selectAll(".area").style("opacity", 0.6).classed("active", false);
+        }
+      })
       .each(function (d) {
         const container = d3.select(this);
 
@@ -567,66 +562,67 @@ d3.json("/data/dataset.json").then((data) => {
 
     // Modifica del mouseover per mostrare il tooltip con informazioni dettagliate
     lines
-    .enter()
-    .append("path")
-    .attr("class", (d) => `line line-${d.key}`)
-    .attr("id", (d) => `line-${d.key}`)
-    .attr("fill", "none")
-    .attr("stroke", (d) => viewMode === "medals" ? medalColors[d.key] : color(d.key))
-    .attr("stroke-width", 2)
-    .attr("d", (d) => line(d.values))
-    .style("pointer-events", "all") // Ensure all lines can receive mouse events
-    .on("mouseover", function(event, d) {
-      // Only highlight if no legend item is selected or this is the selected item
-      if (!activeLegendKey || activeLegendKey === d.key) {
-        // Dim other lines/areas
-        d3.selectAll(".line:not(.active)").style("opacity", 0.2);
-        d3.selectAll(".area:not(.active)").style("opacity", 0.2);
-        
-        // Highlight this line/area
-        d3.select(`#line-${d.key}`).style("opacity", 1).style("stroke-width", 4);
-        d3.select(`#area-${d.key}`).style("opacity", 0.5);
-        
-        // Show tooltip
-        if (viewMode === "disciplines") {
-          const totalGold = d3.sum(d.values, v => v.gold || 0);
-          const totalSilver = d3.sum(d.values, v => v.silver || 0);
-          const totalBronze = d3.sum(d.values, v => v.bronze || 0);
-          const totalMedals = totalGold + totalSilver + totalBronze;
-          
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY + 10}px`)
-            .style("display", "inline-block")
-            .html(`
-              <strong>${d.key}</strong><br>
-              Totale Medaglie: ${totalMedals}<br>
-              Oro: ${totalGold}<br>
-              Argento: ${totalSilver}<br>
-              Bronzo: ${totalBronze}
-            `);
-        } else {
-          const totalMedals = d3.sum(d.values, v => v.count);
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY + 10}px`)
-            .style("display", "inline-block")
-            .html(`
-              <strong>${d.key}</strong><br>
-              Totale Medaglie: ${totalMedals}
-            `);
-        }
-      }
-    })
-    .on("mouseout", function(event, d) {
-      // Only reset if no legend item is selected
-      if (!activeLegendKey) {
-        d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
-        d3.selectAll(".area").style("opacity", 0.6);
-      }
-      tooltip.style("display", "none");
-    })
+  .enter()
+  .append("path")
+  .attr("class", (d) => `line line-${d.key}`)
+  .attr("id", (d) => `line-${d.key}`)
+  .attr("fill", "none")
+  .attr("stroke", (d) =>
+    viewMode === "medals" ? medalColors[d.key] : color(d.key)
+  )
+  .attr("stroke-width", 2)
+  .attr("d", (d) => line(d.values))
+  .on("mouseover", function (event, d) {
+    console.log("Tooltip Data:", d.values);
   
+    if (viewMode === "disciplines") {
+      const totalGold = d3.sum(d.values, (v) => v.gold || 0);
+      const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
+      const totalBronze = d3.sum(d.values, (v) => v.bronze || 0);
+      const totalMedals = totalGold + totalSilver + totalBronze;
+  
+      console.log("Discipline Totals:", {
+        totalGold,
+        totalSilver,
+        totalBronze,
+        totalMedals,
+      });
+  
+      tooltip
+        .style("left", `${event.pageX + 10}px`)
+        .style("top", `${event.pageY + 10}px`)
+        .style("display", "inline-block")
+        .html(`
+          <strong>${d.key}</strong><br>
+          Totale Medaglie: ${totalMedals}<br>
+          Oro: ${totalGold}<br>
+          Argento: ${totalSilver}<br>
+          Bronzo: ${totalBronze}
+        `);
+    } else if (viewMode === "medals") {
+      const totalMedals = d3.sum(d.values, (v) => v.count);
+  
+      console.log("Medals Totals:", { totalMedals });
+  
+      tooltip
+        .style("left", `${event.pageX + 10}px`)
+        .style("top", `${event.pageY + 10}px`)
+        .style("display", "inline-block")
+        .html(`
+          <strong>${d.key}</strong><br>
+          Totale Medaglie: ${totalMedals}
+        `);
+    }
+  })
+  
+  .on("mouseout", function () {
+    // Ripristina lo stato delle linee se non c'è una selezione attiva
+    if (!activeLegendKey) {
+      d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
+      d3.selectAll(".area").style("opacity", 0.6);
+    }
+    tooltip.style("display", "none");
+  })
 
       .merge(lines)
       .transition()
