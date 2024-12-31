@@ -6,7 +6,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #f4f4f9; /* Sfondo più chiaro */
+    background-color: #e5e6cb; /* Sfondo più chiaro */
     color: #333;
 }
 
