@@ -56,8 +56,9 @@ svg.append("g").attr("class", "grid y-grid");
 // Generatore di linee
 const line = d3
   .line()
-  .x((d) => x(d.year))
-  .y((d) => y(d.count));
+  .x(d => x(d.year))
+  .y(d => y(d.count))
+  .defined(d => d.count !== null);
 
 // Generatore di aree sottese
 const area = d3
@@ -456,200 +457,212 @@ d3.json("/data/dataset.json").then((data) => {
       });
   }
 
-  function updateChart(country, viewMode, currentInterval) {
-    const countryData = data.links.filter((link) => link.target === country);
+ // Modifica alla funzione updateChart
+ function updateChart(country, viewMode, currentInterval) {
+  const countryData = data.links.filter(link => link.target === country);
+  
+  const allYears = olympicYears.filter(
+    year => year >= currentInterval[0] && year <= currentInterval[1]
+  );
+  
+  const filteredYears = currentInterval[0] === olympicYears[0]
+    ? allYears
+    : allYears.filter(year => year !== currentInterval[0]);
 
-    // Trova gli anni che appartengono all'intervallo corrente
-    const allYears = olympicYears.filter(
-      (year) => year >= currentInterval[0] && year <= currentInterval[1]
+  let linesData;
+  if (viewMode === "disciplines") {
+    linesData = Array.from(
+      d3.group(countryData, d => d.source),
+      ([key, values]) => {
+        const medalsPerYear = new Map();
+        
+        filteredYears.forEach(year => {
+          medalsPerYear.set(year, {
+            year,
+            count: 0,
+            gold: 0,
+            silver: 0,
+            bronze: 0
+          });
+        });
+        
+        values.forEach(value => {
+          value.attr.forEach(attr => {
+            const year = +attr.year;
+            if (medalsPerYear.has(year)) {
+              const yearData = medalsPerYear.get(year);
+              yearData.count++;
+              if (attr.medal === "Gold") yearData.gold++;
+              else if (attr.medal === "Silver") yearData.silver++;
+              else if (attr.medal === "Bronze") yearData.bronze++;
+            }
+          });
+        });
+        
+        return {
+          key,
+          values: Array.from(medalsPerYear.values())
+        };
+      }
     );
-
-    // Rimuovi il primo anno dell'intervallo, se non è il primo intervallo
-    const filteredYears =
-      currentInterval[0] === olympicYears[0]
-        ? allYears
-        : allYears.filter((year) => year !== currentInterval[0]);
-
-    let linesData;
-    if (viewMode === "disciplines") {
-      linesData = Array.from(
-        d3.group(countryData, (d) => d.source),
-        ([key, values]) => ({
-          key,
-          values: fillMissingYears(
-            Array.from(
-              d3.group(values.flatMap((d) => d.attr || []), (d) => d.year),
-              ([year, entries]) => ({
-                year: +year,
-                count: entries.length, // Totale medaglie
-                gold: entries.filter((entry) => entry.medal === "Gold").length, // Medaglie oro
-                silver: entries.filter((entry) => entry.medal === "Silver").length, // Medaglie argento
-                bronze: entries.filter((entry) => entry.medal === "Bronze").length, // Medaglie bronzo
-              })
-            ),
-            filteredYears
-          ),
-        })
-      );
-    } else if (viewMode === "medals") {
-      linesData = Array.from(
-        d3.group(
-          countryData.flatMap((d) => d.attr),
-          (d) => d.medal
-        ),
-        ([key, values]) => ({
-          key,
-          values: fillMissingYears(
-            Array.from(
-              d3.group(values, (d) => d.year),
-              ([year, entries]) => ({
-                year: +year,
-                count: entries.length, // Totale medaglie per tipo
-              })
-            ),
-            filteredYears
-          ),
-        })
-      );
+  } else if (viewMode === "medals") {
+    const medalCounts = new Map();
     
-      // Aggiungere un controllo per verificare la somma totale delle medaglie
-      const totalCalculatedMedals = linesData.reduce((sum, line) => {
-        return sum + d3.sum(line.values, (v) => v.count);
-      }, 0);
+    ["Gold", "Silver", "Bronze"].forEach(medalType => {
+      const yearMap = new Map();
+      filteredYears.forEach(year => {
+        yearMap.set(year, { year, count: 0 });
+      });
+      medalCounts.set(medalType, yearMap);
+    });
     
-      console.log("Totale medaglie calcolato (medals mode):", totalCalculatedMedals);
-    }
-
-
-    x.domain(d3.extent(filteredYears));
-    y.domain([
-      0,
-      Math.ceil(
-        d3.max(
-          linesData.flatMap((d) => d.values),
-          (d) => d.count
-        )
-      ),
-    ]);
-
-    svg
-      .select(".x-axis")
-      .call(
-        d3.axisBottom(x).tickFormat(d3.format("d")).tickValues(filteredYears)
-      );
-    svg.select(".y-axis").call(d3.axisLeft(y));
-
-    const areas = svg.selectAll(".area").data(linesData, (d) => d.key);
-
-    areas
-      .enter()
-      .append("path")
-      .attr("class", (d) => `area area-${d.key}`)
-      .attr("fill", (d) =>
-        viewMode === "medals" ? medalColors[d.key] : color(d.key)
-      )
-      .attr("opacity", 0.6) // Aumentata saturazione
-      .attr("id", (d) => `area-${d.key}`)
-      .attr("d", (d) => area(d.values))
-      .merge(areas)
-      .transition()
-      .duration(750)
-      .attr("d", (d) => area(d.values));
-
-    areas.exit().remove();
-
-    const lines = svg.selectAll(".line").data(linesData, (d) => d.key);
-
-    // Modifica del mouseover per mostrare il tooltip con informazioni dettagliate
-    lines
-  .enter()
-  .append("path")
-  .attr("class", (d) => `line line-${d.key}`)
-  .attr("id", (d) => `line-${d.key}`)
-  .attr("fill", "none")
-  .attr("stroke", (d) =>
-    viewMode === "medals" ? medalColors[d.key] : color(d.key)
-  )
-  .attr("stroke-width", 2)
-  .attr("d", (d) => line(d.values))
-  .on("mouseover", function (event, d) {
-    // Se c'è una selezione attiva, ignora le altre linee
-    if (activeLegendKey && d.key !== activeLegendKey) return;
-
-    // Evidenzia la linea selezionata
-    d3.selectAll(".line, .area").style("opacity", 0.2);
-    d3.select(`#line-${d.key}`)
-      .style("opacity", 1)
-      .style("stroke-width", 4);
-    d3.select(`#area-${d.key}`).style("opacity", 0.5);
-
-    // Calcola i dettagli delle medaglie
-    if (viewMode === "disciplines") {
-      const totalGold = d3.sum(d.values, (v) => v.gold || 0);
-      const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
-      const totalBronze = d3.sum(d.values, (v) => v.bronze || 0);
-      const totalMedals = totalGold + totalSilver + totalBronze; // Calcola il totale dalle singole medaglie
-
-      tooltip
-        .style("left", `${event.pageX + 10}px`)
-        .style("top", `${event.pageY + 10}px`)
-        .style("display", "inline-block")
-        .html(`
-          <strong>${d.key}</strong><br>
-          Totale Medaglie: ${totalMedals}<br>
-          Oro: ${totalGold}<br>
-          Argento: ${totalSilver}<br>
-          Bronzo: ${totalBronze}
-        `);
-    } else if (viewMode === "medals") {
-      const totalMedals = d3.sum(d.values, (v) => v.count);
-      tooltip
-        .style("left", `${event.pageX + 10}px`)
-        .style("top", `${event.pageY + 10}px`)
-        .style("display", "inline-block")
-        .html(`
-          <strong>${d.key}</strong><br>
-          Totale Medaglie: ${totalMedals}
-        `);
-    }
-  })
-  .on("mouseout", function () {
-    // Ripristina lo stato delle linee se non c'è una selezione attiva
-    if (!activeLegendKey) {
-      d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
-      d3.selectAll(".area").style("opacity", 0.6);
-    }
-    tooltip.style("display", "none");
-  })
-
-      .merge(lines)
-      .transition()
-      .duration(750)
-      .attr("d", (d) => line(d.values));
-
-    lines.exit().remove();
-
-    updateLegend(linesData, viewMode);
-    updateGrid(); // Aggiorna la griglia
+    countryData.forEach(link => {
+      link.attr.forEach(attr => {
+        const year = +attr.year;
+        if (medalCounts.has(attr.medal) && medalCounts.get(attr.medal).has(year)) {
+          medalCounts.get(attr.medal).get(year).count++;
+        }
+      });
+    });
+    
+    linesData = Array.from(medalCounts, ([key, yearMap]) => ({
+      key,
+      values: Array.from(yearMap.values())
+    }));
   }
 
+  x.domain(d3.extent(filteredYears));
+  y.domain([0, Math.ceil(d3.max(linesData.flatMap(d => d.values), d => d.count))]);
+
+  svg.select(".x-axis")
+    .call(d3.axisBottom(x)
+      .tickFormat(d3.format("d"))
+      .tickValues(filteredYears));
+  svg.select(".y-axis").call(d3.axisLeft(y));
+
+  const lines = svg.selectAll(".line").data(linesData, d => d.key);
+
+  lines.enter()
+    .append("path")
+    .attr("class", d => `line line-${d.key}`)
+    .attr("id", d => `line-${d.key}`)
+    .merge(lines)
+    .attr("fill", "none")
+    .attr("stroke", d => viewMode === "medals" ? medalColors[d.key] : color(d.key))
+    .attr("stroke-width", 2)
+    .on("mouseover", function(event, d) {
+      if (viewMode === "disciplines") {
+        const totalGold = d3.sum(d.values, v => v.gold);
+        const totalSilver = d3.sum(d.values, v => v.silver);
+        const totalBronze = d3.sum(d.values, v => v.bronze);
+        const totalMedals = totalGold + totalSilver + totalBronze;
+
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`)
+          .style("display", "inline-block")
+          .html(`
+            <strong>${d.key}</strong><br>
+            Totale Medaglie: ${totalMedals}<br>
+            Oro: ${totalGold}<br>
+            Argento: ${totalSilver}<br>
+            Bronzo: ${totalBronze}
+          `);
+      } else {
+        const totalMedals = d3.sum(d.values, v => v.count);
+        
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`)
+          .style("display", "inline-block")
+          .html(`
+            <strong>${d.key}</strong><br>
+            Totale Medaglie: ${totalMedals}
+          `);
+      }
+
+      d3.select(this)
+        .transition()
+        .duration(200)
+        .attr("stroke-width", 4)
+        .style("opacity", 1);
+        
+      d3.select(`#area-${d.key}`)
+        .transition()
+        .duration(200)
+        .style("opacity", 0.8);
+        
+      d3.selectAll(".line")
+        .filter(fd => fd.key !== d.key)
+        .transition()
+        .duration(200)
+        .style("opacity", 0.2);
+        
+      d3.selectAll(".area")
+        .filter(fd => fd.key !== d.key)
+        .transition()
+        .duration(200)
+        .style("opacity", 0.2);
+    })
+    .on("mouseout", function() {
+      tooltip.style("display", "none");
+      
+      if (!activeLegendKey) {
+        d3.selectAll(".line")
+          .transition()
+          .duration(200)
+          .attr("stroke-width", 2)
+          .style("opacity", 1);
+          
+        d3.selectAll(".area")
+          .transition()
+          .duration(200)
+          .style("opacity", 0.6);
+      }
+    })
+    .transition()
+    .duration(750)
+    .attr("d", d => line(d.values));
+
+  lines.exit().remove();
+
+  const areas = svg.selectAll(".area").data(linesData, d => d.key);
+
+  areas.enter()
+    .append("path")
+    .attr("class", d => `area area-${d.key}`)
+    .attr("id", d => `area-${d.key}`)
+    .merge(areas)
+    .attr("fill", d => viewMode === "medals" ? medalColors[d.key] : color(d.key))
+    .attr("opacity", 0.6)
+    .transition()
+    .duration(750)
+    .attr("d", d => area(d.values));
+
+  areas.exit().remove();
+
+  updateLegend(linesData, viewMode);
+  updateGrid();
+}
 
 
   // Funzione per riempire gli anni mancanti con valori predefiniti
   function fillMissingYears(data, allYears) {
     const filledData = [];
     let lastValue = 0;
-
+  
     allYears.forEach((year) => {
       const match = data.find((d) => d.year === year);
       if (match) {
         lastValue = match.count;
         filledData.push(match);
       } else {
-        filledData.push({ year, count: lastValue });
+        filledData.push({ year, count: 0, gold: 0, silver: 0, bronze: 0 });
       }
     });
-
+  
+    console.log("Filled Data:", filledData);
     return filledData;
   }
+  
 });
