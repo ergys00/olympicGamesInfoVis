@@ -473,18 +473,18 @@ d3.json("/data/dataset.json").then((data) => {
     let linesData;
     if (viewMode === "disciplines") {
       linesData = Array.from(
-        d3.group(countryData.flatMap((d) => d.attr), (d) => d.sport),
+        d3.group(countryData, (d) => d.source),
         ([key, values]) => ({
           key,
           values: fillMissingYears(
             Array.from(
-              d3.group(values, (d) => d.year),
+              d3.group(values.flatMap((d) => d.attr || []), (d) => d.year),
               ([year, entries]) => ({
                 year: +year,
-                count: entries.length,
-                gold: entries.filter((entry) => entry.medal === "Gold").length,
-                silver: entries.filter((entry) => entry.medal === "Silver").length,
-                bronze: entries.filter((entry) => entry.medal === "Bronze").length,
+                count: entries.length, // Totale medaglie
+                gold: entries.filter((entry) => entry.medal === "Gold").length, // Medaglie oro
+                silver: entries.filter((entry) => entry.medal === "Silver").length, // Medaglie argento
+                bronze: entries.filter((entry) => entry.medal === "Bronze").length, // Medaglie bronzo
               })
             ),
             filteredYears
@@ -500,18 +500,26 @@ d3.json("/data/dataset.json").then((data) => {
         ([key, values]) => ({
           key,
           values: fillMissingYears(
-            d3
-              .rollups(
-                values,
-                (v) => v.length,
-                (d) => +d.year
-              )
-              .map(([year, count]) => ({ year, count })),
+            Array.from(
+              d3.group(values, (d) => d.year),
+              ([year, entries]) => ({
+                year: +year,
+                count: entries.length, // Totale medaglie per tipo
+              })
+            ),
             filteredYears
           ),
         })
       );
+    
+      // Aggiungere un controllo per verificare la somma totale delle medaglie
+      const totalCalculatedMedals = linesData.reduce((sum, line) => {
+        return sum + d3.sum(line.values, (v) => v.count);
+      }, 0);
+    
+      console.log("Totale medaglie calcolato (medals mode):", totalCalculatedMedals);
     }
+
 
     x.domain(d3.extent(filteredYears));
     y.domain([
@@ -554,65 +562,66 @@ d3.json("/data/dataset.json").then((data) => {
 
     // Modifica del mouseover per mostrare il tooltip con informazioni dettagliate
     lines
-      .enter()
-      .append("path")
-      .attr("class", (d) => `line line-${d.key}`)
-      .attr("id", (d) => `line-${d.key}`)
-      .attr("fill", "none")
-      .attr("stroke", (d) =>
-        viewMode === "medals" ? medalColors[d.key] : color(d.key)
-      )
-      .attr("stroke-width", 2)
-      .attr("d", (d) => line(d.values))
-      .on("mouseover", function (event, d) {
-        // Se c'è una selezione attiva, ignora le altre linee
-        if (activeLegendKey && d.key !== activeLegendKey) return;
-    
-        // Evidenzia la linea selezionata
-        d3.selectAll(".line, .area").style("opacity", 0.2);
-        d3.select(`#line-${d.key}`)
-          .style("opacity", 1)
-          .style("stroke-width", 4);
-        d3.select(`#area-${d.key}`).style("opacity", 0.5);
-    
-        // Mostra il tooltip con tutti i dettagli solo in modalità "disciplines"
-        if (viewMode === "disciplines") {
-          const totalGold = d3.sum(d.values, (v) => v.gold || 0);
-          const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
-          const totalBronze = d3.sum(d.values, (v) => v.bronze || 0);
-          const totalMedals = d3.sum(d.values, (v) => v.count);
+  .enter()
+  .append("path")
+  .attr("class", (d) => `line line-${d.key}`)
+  .attr("id", (d) => `line-${d.key}`)
+  .attr("fill", "none")
+  .attr("stroke", (d) =>
+    viewMode === "medals" ? medalColors[d.key] : color(d.key)
+  )
+  .attr("stroke-width", 2)
+  .attr("d", (d) => line(d.values))
+  .on("mouseover", function (event, d) {
+    // Se c'è una selezione attiva, ignora le altre linee
+    if (activeLegendKey && d.key !== activeLegendKey) return;
 
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY + 10}px`)
-            .style("display", "inline-block")
-            .html(`
-              <strong>${d.key}</strong><br>
-              Totale Medaglie: ${totalMedals}<br>
-              Oro: ${totalGold}<br>
-              Argento: ${totalSilver}<br>
-              Bronzo: ${totalBronze}
-            `);
-        } else if (viewMode === "medals") {
-          const totalMedals = d3.sum(d.values, (v) => v.count);
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY + 10}px`)
-            .style("display", "inline-block")
-            .html(`
-              <strong>${d.key}</strong><br>
-              Totale Medaglie: ${totalMedals}
-            `);
-        }
-      })
-      .on("mouseout", function () {
-        // Ripristina lo stato delle linee se non c'è una selezione attiva
-        if (!activeLegendKey) {
-          d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
-          d3.selectAll(".area").style("opacity", 0.6);
-        }
-        tooltip.style("display", "none");
-      })
+    // Evidenzia la linea selezionata
+    d3.selectAll(".line, .area").style("opacity", 0.2);
+    d3.select(`#line-${d.key}`)
+      .style("opacity", 1)
+      .style("stroke-width", 4);
+    d3.select(`#area-${d.key}`).style("opacity", 0.5);
+
+    // Calcola i dettagli delle medaglie
+    if (viewMode === "disciplines") {
+      const totalGold = d3.sum(d.values, (v) => v.gold || 0);
+      const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
+      const totalBronze = d3.sum(d.values, (v) => v.bronze || 0);
+      const totalMedals = totalGold + totalSilver + totalBronze; // Calcola il totale dalle singole medaglie
+
+      tooltip
+        .style("left", `${event.pageX + 10}px`)
+        .style("top", `${event.pageY + 10}px`)
+        .style("display", "inline-block")
+        .html(`
+          <strong>${d.key}</strong><br>
+          Totale Medaglie: ${totalMedals}<br>
+          Oro: ${totalGold}<br>
+          Argento: ${totalSilver}<br>
+          Bronzo: ${totalBronze}
+        `);
+    } else if (viewMode === "medals") {
+      const totalMedals = d3.sum(d.values, (v) => v.count);
+      tooltip
+        .style("left", `${event.pageX + 10}px`)
+        .style("top", `${event.pageY + 10}px`)
+        .style("display", "inline-block")
+        .html(`
+          <strong>${d.key}</strong><br>
+          Totale Medaglie: ${totalMedals}
+        `);
+    }
+  })
+  .on("mouseout", function () {
+    // Ripristina lo stato delle linee se non c'è una selezione attiva
+    if (!activeLegendKey) {
+      d3.selectAll(".line").style("opacity", 1).style("stroke-width", 2);
+      d3.selectAll(".area").style("opacity", 0.6);
+    }
+    tooltip.style("display", "none");
+  })
+
       .merge(lines)
       .transition()
       .duration(750)
