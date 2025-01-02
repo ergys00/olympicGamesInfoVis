@@ -19,8 +19,36 @@ const svg = d3
 const x = d3.scaleTime().range([0, width]);
 const y = d3.scaleLinear().range([height, 0]);
 
+// Funzione per generare tick values interi limitati
+function generateUniqueTicks(max) {
+  // Se il valore massimo è piccolo, mostra tutti i valori
+  if (max < 10) {
+    return Array.from({ length: max + 1 }, (_, i) => i);
+  }
+
+  // Altrimenti, genera un numero limitato di tick values
+  const numberOfTicks = 8; // Numero massimo di tick desiderati
+  const step = Math.ceil(max / (numberOfTicks - 1));
+  const ticks = [];
+
+  // Aggiungi sempre 0 come primo valore
+  ticks.push(0);
+
+  // Aggiungi valori intermedi basati sullo step
+  for (let i = step; i < max; i += step) {
+    ticks.push(i);
+  }
+
+  // Assicurati di includere il valore massimo
+  if (!ticks.includes(max)) {
+    ticks.push(max);
+  }
+
+  return ticks;
+}
+
 // Scala di colori per le linee
-const color = d3.scaleOrdinal([
+/*const color = d3.scaleOrdinal([
   "#6FA3EF", // Blu Intenso
   "#71C687", // Verde Intenso
   "#FFD966", // Giallo Intenso
@@ -32,6 +60,54 @@ const color = d3.scaleOrdinal([
   "#D8A9D8", // Lilla Intenso
   "#86C791", // Menta Intensa
   "#A3A3A3", // Grigio Intenso
+]);
+*/
+/*// Scala di colori divergente per le discipline
+const color = d3.scaleOrdinal()
+  .range([
+    "#2166ac", // Blu scuro
+    "#4393c3", // Blu medio
+    "#92c5de", // Blu chiaro
+    "#d1e5f0", // Azzurro molto chiaro
+    "#f7f7f7", // Bianco/Grigio neutro
+    "#fddbc7", // Rosa molto chiaro
+    "#f4a582", // Salmone
+    "#d6604d", // Rosso medio
+    "#b2182b", // Rosso scuro
+    "#67001f", // Bordeaux
+    "#4d004b"  // Viola scuro
+  ]);
+  */
+/*
+  // Scala di colori divergente Rosso-Blu per le discipline
+const color = d3.scaleOrdinal()
+.range([
+  "#67001f", // Rosso molto scuro
+  "#b2182b", // Rosso scuro
+  "#d6604d", // Rosso medio
+  "#f4a582", // Rosso chiaro
+  "#fddbc7", // Rosa molto chiaro
+  "#f7f7f7", // Bianco/Grigio neutro
+  "#d1e5f0", // Azzurro molto chiaro
+  "#92c5de", // Azzurro
+  "#4393c3", // Blu medio
+  "#2166ac", // Blu scuro
+  "#053061"  // Blu molto scuro
+]);
+*/
+// Scala di colori divergente Viola-Verde per le discipline
+const color = d3.scaleOrdinal().range([
+  "#40004b", // Viola molto scuro
+  "#762a83", // Viola scuro
+  "#9970ab", // Viola medio
+  "#c2a5cf", // Viola chiaro
+  "#e7d4e8", // Lavanda chiaro
+  "#f7f7f7", // Bianco/Grigio neutro
+  "#d9f0d3", // Verde molto chiaro
+  "#a6dba0", // Verde chiaro
+  "#5aae61", // Verde medio
+  "#1b7837", // Verde scuro
+  "#00441b", // Verde molto scuro
 ]);
 
 // Aggiunta degli assi
@@ -85,23 +161,20 @@ function updateGrid() {
   // Griglia verticale
   svg
     .select(".x-grid")
-    .call(
-      d3
-        .axisBottom(x)
-        .tickSize(-height) // Linee della griglia
-        .tickFormat("") // Nessuna etichetta
-    )
+    .call(d3.axisBottom(x).tickSize(-height).tickFormat(""))
     .selectAll("line")
-    .style("stroke", "#ddd")
-    .style("stroke-dasharray", "3,3");
+    .style("stroke", "#aaa") // Colore
+    .style("stroke-width", "0.5px") // Linee
+    .style("stroke-dasharray", "2,2"); // Pattern tratteggiato
 
   // Griglia orizzontale
   svg
     .select(".y-grid")
     .call(d3.axisLeft(y).tickSize(-width).tickFormat(""))
     .selectAll("line")
-    .style("stroke", "#ddd")
-    .style("stroke-dasharray", "3,3");
+    .style("stroke", "#aaa") // Colore
+    .style("stroke-width", "0.5px") // Linee Spessore
+    .style("stroke-dasharray", "2,2"); // Densità Pattern tratteggiato
 }
 
 // Caricamento del dataset
@@ -109,9 +182,9 @@ d3.json("/data/dataset.json").then((data) => {
   olympicYears = Array.from(
     new Set(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)))
   )
-    .filter((year) => ![1916, 1940, 1944].includes(year)) // Escludi gli anni non validi
+    .filter((year) => ![1916, 1940, 1944].includes(year)) // Escludo gli anni non validi
     .sort((a, b) => a - b);
-  // Trova l'anno minimo e massimo
+  // Trovo l'anno minimo e massimo
   const minYear = d3.min(
     data.links.flatMap((d) => d.attr.map((attr) => +attr.year))
   );
@@ -138,15 +211,15 @@ d3.json("/data/dataset.json").then((data) => {
       if (interval[0] === 1896 && interval[1] === 1916) {
         return [1896, 1912];
       }
-      // Unisci l'intervallo 1996-2016 e 2016-2020 in 1996-2020
+      // Unisco l'intervallo 1996-2016 e 2016-2020 in 1996-2020
       if (interval[0] === 1996 && interval[1] === 2016) {
         return [1996, 2020];
       }
-      // Mantieni tutti gli altri intervalli intatti
+      // Mantengo tutti gli altri intervalli intatti
       return interval;
     })
     .filter((interval) => {
-      // Filtra fuori gli intervalli che contengono esattamente 1916, 1940, o 1944
+      // Filtro gli intervalli che contengono esattamente 1916, 1940, o 1944
       const excludedYears = [1916, 1940, 1944];
       return !excludedYears.some((year) => interval.includes(year));
     });
@@ -210,7 +283,7 @@ d3.json("/data/dataset.json").then((data) => {
   // Variabile per tracciare lo stato del pulsante
   let isTotalMedalsView = false;
 
-  // Nella parte del codice che gestisce il pulsante "Mostra Medaglie Totali"
+  // Parte del codice che gestisce il pulsante "Mostra Medaglie Totali"
   d3.select("#toggle-total-medals").on("click", () => {
     if (!isTotalMedalsView) {
       // Mostra i risultati totali
@@ -225,28 +298,40 @@ d3.json("/data/dataset.json").then((data) => {
       const intervalStart = +selectedInterval[0];
       const intervalEnd = +selectedInterval[1];
 
+      // Determina se questo è il primo intervallo
+      const isFirstInterval = intervalStart === olympicYears[0];
+
       // Filtra i dati per il paese selezionato E per l'intervallo di anni
+      // tenendo conto degli intervalli semi-aperti
       const totalMedalsData = data.links
         .filter((link) => link.target === country)
         .flatMap((d) => d.attr)
         .filter((d) => {
           const year = +d.year;
-          return year >= intervalStart && year <= intervalEnd;
+          if (isFirstInterval) {
+            // Per il primo intervallo, includi anche l'anno iniziale
+            return year >= intervalStart && year <= intervalEnd;
+          } else {
+            // Per tutti gli altri intervalli, escludi l'anno iniziale
+            return year > intervalStart && year <= intervalEnd;
+          }
         });
 
-      // Raggruppa per anno e calcola il totale delle medaglie
-      const totalMedals = d3
-        .rollups(
-          totalMedalsData,
-          (v) => v.length,
-          (d) => +d.year
-        )
-        .map(([year, count]) => ({ year, count }));
-
       // Trova gli anni dell'intervallo che sono anche anni olimpici
-      const intervalOlympicYears = olympicYears.filter(
-        (year) => year >= intervalStart && year <= intervalEnd
-      );
+      const intervalOlympicYears = olympicYears.filter((year) => {
+        if (isFirstInterval) {
+          return year >= intervalStart && year <= intervalEnd;
+        } else {
+          return year > intervalStart && year <= intervalEnd;
+        }
+      });
+
+      // Raggruppa per anno e calcola il totale delle medaglie
+      const totalMedalsByYear = d3.group(totalMedalsData, (d) => d.year);
+      const totalMedals = Array.from(totalMedalsByYear, ([year, medals]) => ({
+        year: +year,
+        count: medals.length,
+      }));
 
       // Riempie i dati mancanti solo per gli anni olimpici nell'intervallo
       const filledTotalMedals = fillMissingYears(
@@ -255,21 +340,34 @@ d3.json("/data/dataset.json").then((data) => {
       );
 
       // Aggiorna l'asse X per includere solo gli anni dell'intervallo
-      x.domain([intervalStart, intervalEnd]);
+      x.domain([
+        intervalOlympicYears[0], // Usa il primo anno olimpico dell'intervallo
+        intervalEnd,
+      ]);
 
       // Usa solo gli anni olimpici dell'intervallo come tick values
-      svg.select(".x-axis").call(
-        d3
-          .axisBottom(x)
-          .tickFormat(d3.format("d")) // Formato numerico intero
-          .tickValues(intervalOlympicYears) // Usa solo gli anni olimpici dell'intervallo
-      );
+      svg
+        .select(".x-axis")
+        .call(
+          d3
+            .axisBottom(x)
+            .tickFormat(d3.format("d"))
+            .tickValues(intervalOlympicYears)
+        );
 
       // Aggiorna l'asse Y
-      y.domain([0, Math.ceil(d3.max(filledTotalMedals, (d) => d.count) * 1.1)]);
+      const maxMedals = Math.ceil(
+        d3.max(filledTotalMedals, (d) => d.count) * 1.1
+      );
+      y.domain([0, maxMedals]);
 
-      svg.select(".y-axis").call(d3.axisLeft(y));
-
+      // Genera i tick values unici e interi per l'asse Y
+      const yTickValues = generateUniqueTicks(maxMedals);
+      svg
+        .select(".y-axis")
+        .call(
+          d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d"))
+        );
       // Rimuove tutte le altre linee e aree esistenti
       svg.selectAll(".line").remove();
       svg.selectAll(".area").remove();
@@ -295,20 +393,16 @@ d3.json("/data/dataset.json").then((data) => {
           d3.select(this).style("opacity", 1).style("stroke-width", 4);
           svg.select(".area.total").style("opacity", 0.5);
 
-          const totalMedals = d3.sum(d, (v) => v.count);
-          const selectedInterval = d3
-            .select("#interval-select")
-            .property("value")
-            .split("-");
-          const yearRange = `${selectedInterval[0]}-${selectedInterval[1]}`;
+          // Calcola il totale effettivo delle medaglie nell'intervallo
+          const totalMedalsCount = d3.sum(d, (v) => v.count);
 
           tooltip
             .style("left", `${event.pageX + 10}px`)
             .style("top", `${event.pageY + 10}px`)
             .style("display", "inline-block").html(`
-              Periodo: ${yearRange}<br>
-              Medaglie Totali: ${totalMedals}
-            `);
+            Periodo: ${intervalStart}-${intervalEnd}<br>
+            Medaglie Totali: ${totalMedalsCount}
+          `);
         })
         .on("mouseout", function () {
           d3.select(this).style("opacity", 1).style("stroke-width", 2);
@@ -338,7 +432,7 @@ d3.json("/data/dataset.json").then((data) => {
         .append("text")
         .attr("x", 20)
         .attr("y", 12)
-        .text("Tutte le Olimpiadi")
+        .text("Medaglie Totali")
         .style("font-size", "12px")
         .style("alignment-baseline", "middle");
 
@@ -360,7 +454,6 @@ d3.json("/data/dataset.json").then((data) => {
       d3.select(".legend-item.total-legend").remove();
     }
   });
-
   // Event listener per cambio modalità di visualizzazione
   d3.selectAll('input[name="view-mode"]').on("change", () => {
     const viewMode = document.querySelector(
@@ -391,9 +484,9 @@ d3.json("/data/dataset.json").then((data) => {
 
   // Colori per le medaglie
   const medalColors = {
-    Gold: "#ffdf80", // Oro Pastello
-    Silver: "#A0A0A0", // Argento Pastello
-    Bronze: "#e4b89e", // Bronzo Pastello
+    Gold: "#ffc107", // Oro più intenso
+    Silver: "#78909c", // Argento più scuro
+    Bronze: "#cd7f32", // Bronzo più intenso
   };
 
   // Funzione per aggiornare la legenda
@@ -539,22 +632,28 @@ d3.json("/data/dataset.json").then((data) => {
     }
 
     x.domain(d3.extent(filteredYears));
-    y.domain([
-      0,
-      Math.ceil(
-        d3.max(
-          linesData.flatMap((d) => d.values),
-          (d) => d.count
-        )
-      ),
-    ]);
+    // Trova il massimo valore intero nei dati
+    const maxValue = Math.ceil(
+      d3.max(
+        linesData.flatMap((d) => d.values),
+        (d) => d.count
+      )
+    );
 
+    // Imposta il dominio Y da 0 al massimo valore trovato
+    y.domain([0, maxValue]);
+
+    // Genera i tick values unici e interi
+    const yTickValues = generateUniqueTicks(maxValue);
     svg
       .select(".x-axis")
       .call(
         d3.axisBottom(x).tickFormat(d3.format("d")).tickValues(filteredYears)
       );
-    svg.select(".y-axis").call(d3.axisLeft(y));
+    // Aggiorna l'asse Y con i tick values personalizzati
+    svg
+      .select(".y-axis")
+      .call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d")));
 
     const areas = svg.selectAll(".area").data(linesData, (d) => d.key);
 
@@ -593,10 +692,10 @@ d3.json("/data/dataset.json").then((data) => {
       .style("stroke-linecap", "round")
       .style("stroke-linejoin", "round")
       .on("mouseover", function (event, d) {
-        // Se c'è una selezione attiva, ignora le altre linee
+        // Controllo su selezione attiva
         if (activeLegendKey && d.key !== activeLegendKey) return;
 
-        // Prima abbassiamo tutte le opacità
+        //Set delle opacità
         d3.selectAll(".line").style("opacity", 0.2);
         d3.selectAll(".area").style("opacity", 0.1);
 
@@ -607,14 +706,14 @@ d3.json("/data/dataset.json").then((data) => {
 
         d3.select(`#area-${d.key}`).style("opacity", 0.3);
 
-        // Ottieni l'intervallo di anni selezionato
+        // Prendo l'intervallo di anni selezionato
         const selectedInterval = d3
           .select("#interval-select")
           .property("value")
           .split("-");
         const yearRange = `${selectedInterval[0]}-${selectedInterval[1]}`;
 
-        // Calcola i dettagli delle medaglie usando la logica originale
+       
         if (viewMode === "disciplines") {
           const totalGold = d3.sum(d.values, (v) => v.gold || 0);
           const totalSilver = d3.sum(d.values, (v) => v.silver || 0);
