@@ -6,7 +6,7 @@ let sportsSet; // Store list of the sports
 
 // Load both datasets
 Promise.all([
-    d3.json("/data/dataset.json"),
+    d3.json("../../data/dataset.json"),
     d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
 ]).then(([data, world]) => {
     olympicData = data;
