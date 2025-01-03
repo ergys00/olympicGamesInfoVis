@@ -16,11 +16,10 @@ const svg = d3
   );
 
 svg.append("style").text(`
-    .year-delimiter {
-      stroke: #ddd;
-      stroke-width: 1px;
-      stroke-dasharray: 4,4;
-    }
+     .year-delimiter {
+    stroke: #d9d9d9;
+    stroke-width: 2px;
+  }
     .legend-checkbox {
       margin-right: 8px;
       cursor: pointer;
@@ -93,53 +92,6 @@ const color = d3.scaleOrdinal([
   "#A3A3A3", // Grigio Intenso
 ]);
 
-/*// Scala di colori divergente per le discipline
-const color = d3.scaleOrdinal()
-  .range([
-    "#2166ac", // Blu scuro
-    "#4393c3", // Blu medio
-    "#92c5de", // Blu chiaro
-    "#d1e5f0", // Azzurro molto chiaro
-    "#f7f7f7", // Bianco/Grigio neutro
-    "#fddbc7", // Rosa molto chiaro
-    "#f4a582", // Salmone
-    "#d6604d", // Rosso medio
-    "#b2182b", // Rosso scuro
-    "#67001f", // Bordeaux
-    "#4d004b"  // Viola scuro
-  ]);
-  */
-/*
-  // Scala di colori divergente Rosso-Blu per le discipline
-const color = d3.scaleOrdinal()
-.range([
-  "#67001f", // Rosso molto scuro
-  "#b2182b", // Rosso scuro
-  "#d6604d", // Rosso medio
-  "#f4a582", // Rosso chiaro
-  "#fddbc7", // Rosa molto chiaro
-  "#f7f7f7", // Bianco/Grigio neutro
-  "#d1e5f0", // Azzurro molto chiaro
-  "#92c5de", // Azzurro
-  "#4393c3", // Blu medio
-  "#2166ac", // Blu scuro
-  "#053061"  // Blu molto scuro
-]);
-*/
-// Scala di colori divergente Viola-Verde per le discipline
-// const color = d3.scaleOrdinal().range([
-//   "#40004b", // Viola molto scuro
-//   "#762a83", // Viola scuro
-//   "#9970ab", // Viola medio
-//   "#c2a5cf", // Viola chiaro
-//   "#e7d4e8", // Lavanda chiaro
-//   "#f7f7f7", // Bianco/Grigio neutro
-//   "#d9f0d3", // Verde molto chiaro
-//   "#a6dba0", // Verde chiaro
-//   "#5aae61", // Verde medio
-//   "#1b7837", // Verde scuro
-//   "#00441b", // Verde molto scuro
-// ]);
 
 // Aggiunta degli assi
 svg.append("g").attr("class", "x-axis").attr("transform", `translate(0, ${height})`);
@@ -459,6 +411,12 @@ d3.json("../../data/dataset.json").then((data) => {
     Silver: "#78909c", // Argento più scuro
     Bronze: "#cd7f32", // Bronzo più intenso
   };
+    /*// Colori per le medaglie
+    const medalColors = {
+      Gold: "#ffdf80",   // Oro Pastello
+      Silver: "#d9d9d9", // Argento Pastello
+      Bronze: "#e4b89e"  // Bronzo Pastello
+    };*/
 
   // Funzione per aggiornare la legenda
   function updateLegend(linesData, viewMode) {
@@ -762,7 +720,6 @@ d3.json("../../data/dataset.json").then((data) => {
       }
     });
 
-    console.log("Filled Data:", filledData);
     return filledData;
   }
 });
