@@ -6,7 +6,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #e5e6cb; /* Sfondo più chiaro */
+    /*background-color: #e5e6cb; /* Sfondo più chiaro */
     color: #333;
 }
 
@@ -185,4 +185,22 @@ input[type="radio"] + label:hover::before {
     align-items: flex-start; /* Allinea tutto a sinistra */
     gap: 10px; /* Spaziatura tra i controlli */
 }
+
+.back-button {
+    position: absolute;
+    bottom: 25px;
+    left: 25px;
+    padding: 8px 15px;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+    transition: background-color 0.2s;
+  }
+
+  .back-button:hover {
+    background-color: #2980b9;
+  }
 

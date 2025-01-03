@@ -60,9 +60,27 @@
             padding: 5px;
             width: 200px;
         }
+        .back-button {
+        position: absolute;
+        bottom: 25px;
+        left: 25px;
+        padding: 8px 15px;
+        background-color: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 1000;
+        transition: background-color 0.2s;
+      }
+
+      .back-button:hover {
+        background-color: #2980b9;
+      }
     </style>
 </head>
 <body>
+    <a href="../../index.html" class="back-button">← Back to Dashboard</a>
 <div id="dashboard">
     <div id="map" class="chart-container">
         <div class="chart-title">Geospatial Medal Distribution</div>
