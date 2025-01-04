@@ -17,7 +17,7 @@ const svg = d3
 
 svg.append("style").text(`
      .year-delimiter {
-    stroke: #d9d9d9;
+    stroke: #a0a0a0;
     stroke-width: 2px;
   }
     .legend-checkbox {
@@ -36,10 +36,6 @@ svg.append("style").text(`
   `);
 
 d3.select("#toggle-total-medals").remove();
-
-// Scale per l'asse X e Y
-// const x = d3.scaleTime().range([0, width]);
-// const y = d3.scaleLinear().range([height, 0]);
 
 // Scale for X axis - modify for grouped bars
 const x = d3.scaleBand().range([0, width]).padding(0.1);
@@ -92,29 +88,21 @@ const color = d3.scaleOrdinal([
   "#A3A3A3", // Grigio Intenso
 ]);
 
-
 // Aggiunta degli assi
-svg.append("g").attr("class", "x-axis").attr("transform", `translate(0, ${height})`);
+svg
+  .append("g")
+  .attr("class", "x-axis")
+  .attr("transform", `translate(0, ${height})`);
 
 svg.append("g").attr("class", "y-axis");
 
 // Aggiunta dei gruppi per le griglie
-svg.append("g").attr("class", "grid x-grid").attr("transform", `translate(0, ${height})`);
+svg
+  .append("g")
+  .attr("class", "grid x-grid")
+  .attr("transform", `translate(0, ${height})`);
 
 svg.append("g").attr("class", "grid y-grid");
-
-// // Generatore di linee
-// const line = d3
-//   .line()
-//   .x((d) => x(d.year))
-//   .y((d) => y(d.count));
-
-// // Generatore di aree sottese
-// const area = d3
-//   .area()
-//   .x((d) => x(d.year))
-//   .y0(height)
-//   .y1((d) => y(d.count));
 
 // Tooltip per interazione con il mouse
 const tooltip = d3
@@ -156,12 +144,18 @@ function updateGrid() {
 
 // Caricamento del dataset
 d3.json("../../data/dataset.json").then((data) => {
-  olympicYears = Array.from(new Set(data.links.flatMap((d) => d.attr.map((attr) => +attr.year))))
+  olympicYears = Array.from(
+    new Set(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)))
+  )
     .filter((year) => ![1916, 1940, 1944].includes(year)) // Escludo gli anni non validi
     .sort((a, b) => a - b);
   // Trovo l'anno minimo e massimo
-  const minYear = d3.min(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)));
-  const maxYear = d3.max(data.links.flatMap((d) => d.attr.map((attr) => +attr.year)));
+  const minYear = d3.min(
+    data.links.flatMap((d) => d.attr.map((attr) => +attr.year))
+  );
+  const maxYear = d3.max(
+    data.links.flatMap((d) => d.attr.map((attr) => +attr.year))
+  );
 
   // Funzione per calcolare intervalli di anni
   function getYearIntervals(startYear, endYear, interval) {
@@ -173,7 +167,9 @@ d3.json("../../data/dataset.json").then((data) => {
   }
 
   const yearInterval = 20; // Intervallo di 20 anni
-  let allIntervals = getYearIntervals(minYear, maxYear, yearInterval).filter((interval) => !(interval[0] === 2016 && interval[1] === 2020));
+  let allIntervals = getYearIntervals(minYear, maxYear, yearInterval).filter(
+    (interval) => !(interval[0] === 2016 && interval[1] === 2020)
+  );
   allIntervals = allIntervals
     .map((interval) => {
       // Modifica l'intervallo 1896-1916 in 1896-1912
@@ -203,7 +199,9 @@ d3.json("../../data/dataset.json").then((data) => {
       updatedIntervals.push([current[1], next[0]]);
     }
   }
-  allIntervals = [...allIntervals, ...updatedIntervals].sort((a, b) => a[0] - b[0]);
+  allIntervals = [...allIntervals, ...updatedIntervals].sort(
+    (a, b) => a[0] - b[0]
+  );
 
   // Popolamento del menu a tendina per selezione intervalli
   const intervalSelect = d3.select("#interval-select");
@@ -218,8 +216,14 @@ d3.json("../../data/dataset.json").then((data) => {
   let currentInterval = allIntervals[0];
 
   // Lista dei paesi con nome completo
-  const countries = [...new Set(data.nodes.filter((d) => d.noc).map((d) => ({ id: d.id, name: d.name })))].sort((a, b) => a.name.localeCompare(b.name)); // Ordinamento alfabetico;
-  const defaultCountry = countries[0].id;
+  const countries = [
+    ...new Set(
+      data.nodes.filter((d) => d.noc).map((d) => ({ id: d.id, name: d.name }))
+    ),
+  ].sort((a, b) => a.name.localeCompare(b.name)); // Ordinamento alfabetico;
+  const defaultCountry =
+    countries.find((country) => country.name === "Italy")?.id ||
+    countries[0].id;
 
   // Popolamento del menu a tendina per selezione paese
   const select = d3.select("#country-select");
@@ -229,7 +233,8 @@ d3.json("../../data/dataset.json").then((data) => {
     .enter()
     .append("option")
     .attr("value", (d) => d.id)
-    .text((d) => d.name);
+    .text((d) => d.name)
+    .property("selected", (d) => d.id === defaultCountry);
 
   // Aggiornamento iniziale del grafico
   updateChart(defaultCountry, "disciplines", currentInterval);
@@ -237,7 +242,9 @@ d3.json("../../data/dataset.json").then((data) => {
   // Event listener per cambio paese
   select.on("change", () => {
     const country = select.property("value");
-    const viewMode = document.querySelector('input[name="view-mode"]:checked').value;
+    const viewMode = document.querySelector(
+      'input[name="view-mode"]:checked'
+    ).value;
     updateChart(country, viewMode, currentInterval);
   });
 
@@ -252,7 +259,10 @@ d3.json("../../data/dataset.json").then((data) => {
       d3.select("#toggle-total-medals").text("Resetta Risultati");
 
       const country = select.property("value");
-      const selectedInterval = d3.select("#interval-select").property("value").split("-");
+      const selectedInterval = d3
+        .select("#interval-select")
+        .property("value")
+        .split("-");
       const intervalStart = +selectedInterval[0];
       const intervalEnd = +selectedInterval[1];
 
@@ -292,7 +302,10 @@ d3.json("../../data/dataset.json").then((data) => {
       }));
 
       // Riempie i dati mancanti solo per gli anni olimpici nell'intervallo
-      const filledTotalMedals = fillMissingYears(totalMedals, intervalOlympicYears);
+      const filledTotalMedals = fillMissingYears(
+        totalMedals,
+        intervalOlympicYears
+      );
 
       // Aggiorna l'asse X per includere solo gli anni dell'intervallo
       x.domain([
@@ -301,21 +314,39 @@ d3.json("../../data/dataset.json").then((data) => {
       ]);
 
       // Usa solo gli anni olimpici dell'intervallo come tick values
-      svg.select(".x-axis").call(d3.axisBottom(x).tickFormat(d3.format("d")).tickValues(intervalOlympicYears));
+      svg
+        .select(".x-axis")
+        .call(
+          d3
+            .axisBottom(x)
+            .tickFormat(d3.format("d"))
+            .tickValues(intervalOlympicYears)
+        );
 
       // Aggiorna l'asse Y
-      const maxMedals = Math.ceil(d3.max(filledTotalMedals, (d) => d.count) * 1.1);
+      const maxMedals = Math.ceil(
+        d3.max(filledTotalMedals, (d) => d.count) * 1.1
+      );
       y.domain([0, maxMedals]);
 
       // Genera i tick values unici e interi per l'asse Y
       const yTickValues = generateUniqueTicks(maxMedals);
-      svg.select(".y-axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d")));
+      svg
+        .select(".y-axis")
+        .call(
+          d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d"))
+        );
       // Rimuove tutte le altre linee e aree esistenti
       svg.selectAll(".line").remove();
       svg.selectAll(".area").remove();
 
       // Aggiungi o aggiorna l'area sottesa per il totale delle medaglie
-      svg.append("path").datum(filledTotalMedals).attr("class", "area total").attr("fill", "rgba(0, 0, 0, 0.5)").attr("d", area);
+      svg
+        .append("path")
+        .datum(filledTotalMedals)
+        .attr("class", "area total")
+        .attr("fill", "rgba(0, 0, 0, 0.5)")
+        .attr("d", area);
 
       // Aggiungi o aggiorna la linea nera per il totale delle medaglie
       svg
@@ -355,13 +386,23 @@ d3.json("../../data/dataset.json").then((data) => {
       legendGroup
         .append("g")
         .attr("class", "legend-item total-legend")
-        .attr("transform", `translate(0, ${legendGroup.selectAll(".legend-item").size() * 20})`)
+        .attr(
+          "transform",
+          `translate(0, ${legendGroup.selectAll(".legend-item").size() * 20})`
+        )
         .append("rect")
         .attr("width", 15)
         .attr("height", 15)
         .attr("fill", "#000");
 
-      legendGroup.select(".total-legend").append("text").attr("x", 20).attr("y", 12).text("Medaglie Totali").style("font-size", "12px").style("alignment-baseline", "middle");
+      legendGroup
+        .select(".total-legend")
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text("Medaglie Totali")
+        .style("font-size", "12px")
+        .style("alignment-baseline", "middle");
 
       // Aggiorna la griglia
       updateGrid();
@@ -383,7 +424,9 @@ d3.json("../../data/dataset.json").then((data) => {
   });
   // Event listener per cambio modalità di visualizzazione
   d3.selectAll('input[name="view-mode"]').on("change", () => {
-    const viewMode = document.querySelector('input[name="view-mode"]:checked').value;
+    const viewMode = document.querySelector(
+      'input[name="view-mode"]:checked'
+    ).value;
 
     // Mostra o nasconde il pulsante
     if (viewMode === "medals") {
@@ -393,6 +436,9 @@ d3.json("../../data/dataset.json").then((data) => {
     }
 
     const country = select.property("value");
+    // Rimuovi tutte le linee prima di aggiornare il grafico
+    svg.selectAll(".year-delimiter").remove();
+    svg.selectAll("line.year-delimiter").remove();
     updateChart(country, viewMode, currentInterval);
   });
 
@@ -400,8 +446,13 @@ d3.json("../../data/dataset.json").then((data) => {
   intervalSelect.on("change", function () {
     const selectedInterval = d3.select(this).property("value").split("-");
     currentInterval = [+selectedInterval[0], +selectedInterval[1]];
+    // Rimuovi tutte le linee esistenti
+    svg.selectAll(".year-delimiter").remove();
+    svg.selectAll("line.year-delimiter").remove();
     const country = select.property("value");
-    const viewMode = document.querySelector('input[name="view-mode"]:checked').value;
+    const viewMode = document.querySelector(
+      'input[name="view-mode"]:checked'
+    ).value;
     updateChart(country, viewMode, currentInterval);
   });
 
@@ -411,12 +462,6 @@ d3.json("../../data/dataset.json").then((data) => {
     Silver: "#78909c", // Argento più scuro
     Bronze: "#cd7f32", // Bronzo più intenso
   };
-    /*// Colori per le medaglie
-    const medalColors = {
-      Gold: "#ffdf80",   // Oro Pastello
-      Silver: "#d9d9d9", // Argento Pastello
-      Bronze: "#e4b89e"  // Bronzo Pastello
-    };*/
 
   // Funzione per aggiornare la legenda
   function updateLegend(linesData, viewMode) {
@@ -460,7 +505,9 @@ d3.json("../../data/dataset.json").then((data) => {
       .attr("x", 24)
       .attr("width", 15)
       .attr("height", 15)
-      .attr("fill", (d) => (viewMode === "medals" ? medalColors[d.key] : color(d.key)));
+      .attr("fill", (d) =>
+        viewMode === "medals" ? medalColors[d.key] : color(d.key)
+      );
 
     // Add text labels
     items
@@ -478,7 +525,9 @@ d3.json("../../data/dataset.json").then((data) => {
         const categoryKey = d.key.replace(/\s+/g, "-");
 
         // Update bars visibility
-        svg.selectAll(`.bar-${categoryKey}`).style("display", isChecked ? "block" : "none");
+        svg
+          .selectAll(`.bar-${categoryKey}`)
+          .style("display", isChecked ? "block" : "none");
 
         // If hovering a bar when unchecking, reset the view
         if (!isChecked) {
@@ -489,7 +538,10 @@ d3.json("../../data/dataset.json").then((data) => {
     });
   }
 
-  svg.append("g").attr("class", "connecting-line-group").style("display", "none");
+  svg
+    .append("g")
+    .attr("class", "connecting-line-group")
+    .style("display", "none");
 
   function updateChart(country, viewMode, currentInterval) {
     const countryData = data.links.filter((link) => link.target === country);
@@ -506,18 +558,46 @@ d3.json("../../data/dataset.json").then((data) => {
       return year > currentInterval[0] && year <= currentInterval[1];
     });
 
+    // Rimuovi TUTTE le linee esistenti
     svg.selectAll(".year-delimiter").remove();
+    svg.selectAll("line.year-delimiter").remove();
+
+    // Crea o seleziona il gruppo per le linee
+    let yearDelimiterGroup = svg.select(".year-delimiter-group");
+    if (yearDelimiterGroup.empty()) {
+      yearDelimiterGroup = svg
+        .append("g")
+        .attr("class", "year-delimiter-group");
+    } else {
+      yearDelimiterGroup.selectAll("*").remove();
+    }
+
+    // Aggiorna le scale prima di disegnare le linee
+    x.domain(filteredYears);
+
+    // Disegna le linee per ogni anno nel range
     filteredYears.forEach((year) => {
-      svg.append("line").attr("class", "year-delimiter").attr("x1", x(year)).attr("y1", 0).attr("x2", x(year)).attr("y2", height);
+      yearDelimiterGroup
+        .append("line")
+        .attr("class", "year-delimiter")
+        .attr("x1", x(year))
+        .attr("y1", 0)
+        .attr("x2", x(year))
+        .attr("y2", height)
+        .style("stroke", "#a0a0a0")
+        .style("stroke-width", "2px");
     });
 
-    svg
+    // Aggiungi la linea finale
+    yearDelimiterGroup
       .append("line")
       .attr("class", "year-delimiter")
       .attr("x1", x(filteredYears[filteredYears.length - 1]) + x.bandwidth())
       .attr("y1", 0)
       .attr("x2", x(filteredYears[filteredYears.length - 1]) + x.bandwidth())
-      .attr("y2", height);
+      .attr("y2", height)
+      .style("stroke", "#a0a0a0")
+      .style("stroke-width", "2px");
 
     let groupedData;
     if (viewMode === "disciplines") {
@@ -535,8 +615,10 @@ d3.json("../../data/dataset.json").then((data) => {
                 year: +year,
                 count: entries.length,
                 gold: entries.filter((entry) => entry.medal === "Gold").length,
-                silver: entries.filter((entry) => entry.medal === "Silver").length,
-                bronze: entries.filter((entry) => entry.medal === "Bronze").length,
+                silver: entries.filter((entry) => entry.medal === "Silver")
+                  .length,
+                bronze: entries.filter((entry) => entry.medal === "Bronze")
+                  .length,
               })
             ),
             filteredYears
@@ -568,20 +650,26 @@ d3.json("../../data/dataset.json").then((data) => {
     // Update scales for bar chart
     x.domain(filteredYears);
     xSubgroup.domain(groupedData.map((d) => d.key)).range([0, x.bandwidth()]);
-
     const maxValue = Math.ceil(
       d3.max(
         groupedData.flatMap((d) => d.values),
         (d) => d.count
       )
     );
-    y.domain([0, maxValue]);
+
+    // Se il valore massimo è 0, imposta un dominio fisso da 0 a 1
+    if (maxValue === 0) {
+      y.domain([0, 1]);
+    } else {
+      y.domain([0, maxValue]);
+    }
 
     // Update axes
-    const yTickValues = generateUniqueTicks(maxValue);
+    const yTickValues = generateUniqueTicks(maxValue === 0 ? 1 : maxValue);
     svg.select(".x-axis").call(d3.axisBottom(x).tickFormat(d3.format("d")));
-
-    svg.select(".y-axis").call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d")));
+    svg
+      .select(".y-axis")
+      .call(d3.axisLeft(y).tickValues(yTickValues).tickFormat(d3.format("d")));
 
     // Remove previous elements
     svg.selectAll(".bar-group").remove();
@@ -595,112 +683,145 @@ d3.json("../../data/dataset.json").then((data) => {
       .attr("transform", (d) => `translate(${x(d)},0)`);
     // Create year groups
     // Create bars for each category within year groups
-    yearGroups.selectAll(".bar")
-  .data(year => groupedData.map(group => ({
-    key: group.key,
-    value: group.values.find(v => v.year === year)?.count || 0,
-    year: year,
-    // Add the full group data for accessing values later
-    groupData: group.values
-  })))
-  .enter()
-  .append("rect")
-  .attr("class", d => `bar bar-${d.key.replace(/\s+/g, '-')}`)
-  .attr("x", d => xSubgroup(d.key))
-  .attr("y", d => y(d.value))
-  .attr("width", xSubgroup.bandwidth())
-  .attr("height", d => height - y(d.value))
-  .attr("fill", d => viewMode === "medals" ? medalColors[d.key] : color(d.key))
-  .on("mouseover", function(event, d) {
-    const categoryKey = d.key.replace(/\s+/g, '-');
-    const checkbox = d3.select(`#checkbox-${categoryKey}`);
-    if (!checkbox.property("checked")) return;
-
-    // Reduce opacity of all bars
-    svg.selectAll(".bar")
-      .filter(function() {
-        const barCategoryKey = d3.select(this).attr("class").split(" ")[1].replace('bar-', '');
-        const barCheckbox = d3.select(`#checkbox-${barCategoryKey}`);
-        return barCheckbox.property("checked");
-      })
-      .style("opacity", 0.2);
-    
-    // Highlight bars of the same category
-    svg.selectAll(`.bar-${categoryKey}`)
-      .style("opacity", 1)
-      .style("stroke", "#000")
-      .style("stroke-width", 2);
-
-    // Get all data points for this category
-    const categoryData = filteredYears.map(year => ({
-      key: d.key,
-      value: groupedData.find(g => g.key === d.key)
-        .values.find(v => v.year === year)?.count || 0,
-      year: year
-    })).filter(point => point.value !== undefined);
-
-    // Show connecting line
-    const lineGroup = svg.select(".connecting-line-group");
-    lineGroup.style("display", "block")
-      .selectAll("*").remove();
-
-    // Add dotted line
-    lineGroup.append("path")
-      .datum(categoryData)
-      .attr("fill", "none")
-      .attr("stroke", viewMode === "medals" ? medalColors[d.key] : color(d.key))
-      .attr("stroke-width", 2)
-      .attr("stroke-dasharray", "5,5")
-      .attr("d", d3.line()
-        .x(d => x(d.year) + xSubgroup(d.key) + xSubgroup.bandwidth() / 2)
-        .y(d => y(d.value))
-      );
-
-    // Add circles at each point
-    lineGroup.selectAll(".connection-point")
-      .data(categoryData)
+    yearGroups
+      .selectAll(".bar")
+      .data((year) =>
+        groupedData.map((group) => ({
+          key: group.key,
+          value: group.values.find((v) => v.year === year)?.count || 0,
+          year: year,
+          // Add the full group data for accessing values later
+          groupData: group.values,
+        }))
+      )
       .enter()
-      .append("circle")
-      .attr("class", "connection-point")
-      .attr("cx", p => x(p.year) + xSubgroup(p.key) + xSubgroup.bandwidth() / 2)
-      .attr("cy", p => y(p.value))
-      .attr("r", 4)
-      .attr("fill", viewMode === "medals" ? medalColors[d.key] : color(d.key))
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 2);
+      .append("rect")
+      .attr("class", (d) => `bar bar-${d.key.replace(/\s+/g, "-")}`)
+      .attr("x", (d) => xSubgroup(d.key))
+      .attr("y", (d) => y(d.value))
+      .attr("width", xSubgroup.bandwidth())
+      .attr("height", (d) => height - y(d.value))
+      .attr("fill", (d) =>
+        viewMode === "medals" ? medalColors[d.key] : color(d.key)
+      )
+      .on("mouseover", function (event, d) {
+        const categoryKey = d.key.replace(/\s+/g, "-");
+        const checkbox = d3.select(`#checkbox-${categoryKey}`);
+        if (!checkbox.property("checked")) return;
 
-    // Show tooltip with position adjustment
-    const tooltipX = event.pageX + 10;
-    const tooltipY = event.pageY - 28; // Offset to prevent tooltip from blocking the mouse
+        // Reduce opacity of all bars
+        svg
+          .selectAll(".bar")
+          .filter(function () {
+            const barCategoryKey = d3
+              .select(this)
+              .attr("class")
+              .split(" ")[1]
+              .replace("bar-", "");
+            const barCheckbox = d3.select(`#checkbox-${barCategoryKey}`);
+            return barCheckbox.property("checked");
+          })
+          .style("opacity", 0.2);
 
-    tooltip
-      .style("left", `${tooltipX}px`)
-      .style("top", `${tooltipY}px`)
-      .style("display", "block")
-      .html(`
+        // Highlight bars of the same category
+        svg
+          .selectAll(`.bar-${categoryKey}`)
+          .style("opacity", 1)
+          .style("stroke", "#000")
+          .style("stroke-width", 2);
+
+        // Get all data points for this category
+        const categoryData = filteredYears
+          .map((year) => ({
+            key: d.key,
+            value:
+              groupedData
+                .find((g) => g.key === d.key)
+                .values.find((v) => v.year === year)?.count || 0,
+            year: year,
+          }))
+          .filter((point) => point.value !== undefined);
+
+        // Show connecting line
+        const lineGroup = svg.select(".connecting-line-group");
+        lineGroup.style("display", "block").selectAll("*").remove();
+
+        // Add dotted line
+        lineGroup
+          .append("path")
+          .datum(categoryData)
+          .attr("fill", "none")
+          .attr(
+            "stroke",
+            viewMode === "medals" ? medalColors[d.key] : color(d.key)
+          )
+          .attr("stroke-width", 2)
+          .attr("stroke-dasharray", "5,5")
+          .attr(
+            "d",
+            d3
+              .line()
+              .x(
+                (d) => x(d.year) + xSubgroup(d.key) + xSubgroup.bandwidth() / 2
+              )
+              .y((d) => y(d.value))
+          );
+
+        // Add circles at each point
+        lineGroup
+          .selectAll(".connection-point")
+          .data(categoryData)
+          .enter()
+          .append("circle")
+          .attr("class", "connection-point")
+          .attr(
+            "cx",
+            (p) => x(p.year) + xSubgroup(p.key) + xSubgroup.bandwidth() / 2
+          )
+          .attr("cy", (p) => y(p.value))
+          .attr("r", 4)
+          .attr(
+            "fill",
+            viewMode === "medals" ? medalColors[d.key] : color(d.key)
+          )
+          .attr("stroke", "#fff")
+          .attr("stroke-width", 2);
+
+        // Show tooltip with position adjustment
+        const tooltipX = event.pageX + 10;
+        const tooltipY = event.pageY - 28; // Offset to prevent tooltip from blocking the mouse
+
+        tooltip
+          .style("left", `${tooltipX}px`)
+          .style("top", `${tooltipY}px`)
+          .style("display", "block").html(`
         <strong>${d.key}</strong><br>
         Anno: ${d.year}<br>
         Medaglie: ${d.value}
       `);
-  })
-  .on("mouseout", function() {
-    // Restore opacity for all bars
-    svg.selectAll(".bar")
-      .filter(function() {
-        const barCategoryKey = d3.select(this).attr("class").split(" ")[1].replace('bar-', '');
-        const barCheckbox = d3.select(`#checkbox-${barCategoryKey}`);
-        return barCheckbox.property("checked");
       })
-      .style("opacity", 1)
-      .style("stroke", "none");
-    
-    // Hide connecting line and points
-    svg.select(".connecting-line-group")
-      .style("display", "none");
-    
-    // Hide tooltip
-    tooltip.style("display", "none");
-  });
+      .on("mouseout", function () {
+        // Restore opacity for all bars
+        svg
+          .selectAll(".bar")
+          .filter(function () {
+            const barCategoryKey = d3
+              .select(this)
+              .attr("class")
+              .split(" ")[1]
+              .replace("bar-", "");
+            const barCheckbox = d3.select(`#checkbox-${barCategoryKey}`);
+            return barCheckbox.property("checked");
+          })
+          .style("opacity", 1)
+          .style("stroke", "none");
+
+        // Hide connecting line and points
+        svg.select(".connecting-line-group").style("display", "none");
+
+        // Hide tooltip
+        tooltip.style("display", "none");
+      });
     updateLegend(groupedData, viewMode);
     updateGrid();
   }
