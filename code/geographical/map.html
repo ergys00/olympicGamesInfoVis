@@ -100,7 +100,7 @@
                 <svg></svg>
             </div>
             <div id="barchart" class="chart-container">
-                <div class="chart-title">Sports Medals Leaderboard</div>
+                <div id="chart-title" class="chart-title"></div>
                 <svg></svg>
             </div>
         </div>
@@ -488,6 +488,7 @@
                 .on("click", function (event, d) {
                     const countryId = d.id;
                     const countryName = d.properties.name;
+                    document.getElementById("chart-title").innerHTML = "Sports Medals Leadership for " + d.properties.name
                     const sportsMedals = getSportsMedalsForCountry(
                         countryId,
                         countryName
