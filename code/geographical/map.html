@@ -186,7 +186,7 @@
         const path = d3.geoPath().projection(projection);
     
         const mapGroup = svgMap.append("g");
-        d3.legend
+    
         // Add zoom functionality with limited panning
         const zoom = d3.zoom()
             .scaleExtent([1, 8])
@@ -295,8 +295,6 @@
         updateLabels(1);
     }
     
-
-
     function updateTooltipListeners(states, geoData) {
         states
             .on("mouseover", function (event, d) {
@@ -431,7 +429,7 @@ function drawBarChart(data) {
     // Color scale for gender
     const color = d3.scaleOrdinal()
         .domain(['female', 'male'])
-        .range(['#ffd8e0', '#a0cce4']);
+        .range(['#fce4dc', '#a0cce4']);
 
     // Add stacked bars
     const layer = svgBarChart.selectAll("g.layer")
