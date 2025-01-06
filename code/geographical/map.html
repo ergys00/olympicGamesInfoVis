@@ -358,7 +358,7 @@
             const colorScale = d3
                 .scalePow()
                 .domain([0, d3.max(geoData, (d) => d.totalMedals)])
-                .range(["#fee5da", "#a4141c"])
+                .range(["#ffded6", "#ff6947"])
                 .exponent(0.5);
 
             createLegend(colorScale);
@@ -501,7 +501,7 @@
             const colorScale = d3
                 .scalePow()
                 .domain([0, d3.max(newGeoData, (d) => d.totalMedals)])
-                .range(["#fee5da", "#a4141c"])
+                .range(["#ffded6", "#ff6947"])
                 .exponent(0.5);
 
             const states = d3
@@ -601,7 +601,7 @@
             const color = d3
                 .scaleOrdinal()
                 .domain(["female", "male"])
-                .range(["#fce4dc", "#a0cce4"]);
+                .range(["#fcd9f8", "#ade8ff"]);
 
             // Add stacked bars
             const layer = svgBarChart
