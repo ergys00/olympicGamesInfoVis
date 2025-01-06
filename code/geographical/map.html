@@ -100,7 +100,7 @@
                 <svg></svg>
             </div>
             <div id="barchart" class="chart-container">
-                <div class="chart-title">Sports Medals Leaderboard</div>
+                <div id="chart-title" class="chart-title"></div>
                 <svg></svg>
             </div>
         </div>
@@ -207,7 +207,13 @@
                 .domain(domain)
                 .range([0, legendWidth]);
 
-            const legendAxis = d3.axisBottom(legendScale).ticks(5); // Adjust the number of ticks as needed
+            const tickValues = legendScale.ticks(5).slice(0, 4);
+            tickValues.push(domain[1]);
+
+            const legendAxis = d3
+                .axisBottom(legendScale)
+                .tickValues(tickValues) // Set explicit tick values
+                .tickFormat(d3.format("d")); // Format as integers
 
             legendSvg
                 .append("g")
@@ -273,7 +279,13 @@
                 .domain(domain)
                 .range([0, legendWidth]);
 
-            const legendAxis = d3.axisBottom(legendScale).ticks(5); // Adjust the number of ticks as needed
+            const tickValues = legendScale.ticks(5).slice(0, 4);
+            tickValues.push(domain[1]);
+
+            const legendAxis = d3
+                .axisBottom(legendScale)
+                .tickValues(tickValues) // Set explicit tick values
+                .tickFormat(d3.format("d")); // Format as integers
 
             legendSvg
                 .append("g")
@@ -358,7 +370,7 @@
             const colorScale = d3
                 .scalePow()
                 .domain([0, d3.max(geoData, (d) => d.totalMedals)])
-                .range(["#fee5da", "#a4141c"])
+                .range(["#ffded6", "#ff6947"])
                 .exponent(0.5);
 
             createLegend(colorScale);
@@ -488,6 +500,8 @@
                 .on("click", function (event, d) {
                     const countryId = d.id;
                     const countryName = d.properties.name;
+                    document.getElementById("chart-title").innerHTML =
+                        "Sports Medals Leadership for " + d.properties.name;
                     const sportsMedals = getSportsMedalsForCountry(
                         countryId,
                         countryName
@@ -500,7 +514,7 @@
             const colorScale = d3
                 .scalePow()
                 .domain([0, d3.max(newGeoData, (d) => d.totalMedals)])
-                .range(["#fee5da", "#a4141c"])
+                .range(["#ffded6", "#ff6947"])
                 .exponent(0.5);
 
             const states = d3
@@ -517,7 +531,7 @@
                         ? colorScale(country.totalMedals)
                         : "#eeeeee";
                 });
-            updateLegend(colorScale)
+            updateLegend(colorScale);
 
             // Update tooltip event listeners with the new data
             updateTooltipListeners(states, newGeoData);
@@ -600,7 +614,7 @@
             const color = d3
                 .scaleOrdinal()
                 .domain(["female", "male"])
-                .range(["#fce4dc", "#a0cce4"]);
+                .range(["#fcd9f8", "#ade8ff"]);
 
             // Add stacked bars
             const layer = svgBarChart
