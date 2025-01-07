@@ -143,13 +143,12 @@
                 });
         });
 
-        function getSportsSet(data) {
-            sportsSet = new Set();
-            //Creo una lista degli sport
-            data.links.forEach((link) => {
-                if (link.source) sportsSet.add(link.source);
-            });
-            return sportsSet;
+    function getSportsSet(data) {
+        sportsSet = []
+        for(i = 0; i < 11; i++){
+                sportsSet.push(data.nodes[i].name)
+            }
+            return sportsSet
         }
 
         function createLegend(colorScale) {
@@ -231,7 +230,7 @@
             selectElement.appendChild(allOption);
 
             // ordino gli sport in ordine alfabetico
-            const sortedSports = Array.from(sportsSet).sort();
+            const sortedSports = sportsSet.sort();
 
             // popolo la select
             sortedSports.forEach((sport) => {
@@ -247,7 +246,7 @@
             //se è stato scelto All allora prendo tutti i link altrimenti li filtro per lo sport scelto
             data.links
                 .filter((entry) =>
-                    sport === "All" ? true : entry.source === sport
+                    sport === "All" ? true : entry.source === sport.toLowerCase()
                 )
                 //per ognuno dei link sommo la lunghezza di attr che ha un'occorrenza a medaglia vinta
                 .forEach((link) => {
