@@ -492,7 +492,7 @@
             olympicData.links.forEach((link) => {
                 if (link.target === realId) {
                     sportsSet.forEach((sport) => {
-                        if (link.source === sport) {
+                        if (link.source === sport.toLowerCase()) {
                             if (!sportsMedals[sport]) {
                                 sportsMedals[sport] = {
                                     male: 0,
