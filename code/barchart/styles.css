@@ -1,4 +1,4 @@
-/* Miglioramento dello stile generale */
+
 body {
     font-family: 'Roboto', Arial, sans-serif;
     margin: 0;
@@ -6,7 +6,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /*background-color: #e5e6cb; /* Sfondo più chiaro */
     color: #333;
 }
 
@@ -57,7 +56,6 @@ svg {
 }
 
 
-/* Stile per la legenda */
 #legend {
     margin-left: 20px;
     min-width: 150px;
@@ -66,124 +64,98 @@ svg {
 }
 label {
     font-family: 'Roboto', Arial, sans-serif;
-    font-size: 18px; /* Testo più grande */
-    color: #444; /* Colore scuro */
-    margin-bottom: 5px; /* Forza il blocco per un layout pulito */
+    font-size: 18px; 
+    color: #444; 
+    margin-bottom: 5px; 
 }
 
-/* Numeri sugli assi più grandi */
+
 .x-axis text,
 .y-axis text {
-    font-size: 16px; /* Dimensione aumentata */
-    fill: #333; /* Colore più scuro */
-    font-weight: bold; /* Numeri in grassetto */
+    font-size: 16px; 
+    fill: #333; 
+    font-weight: bold; 
 }
 
-/* Linee della griglia più visibili */
 .grid line {
-    stroke: #bbb; /* Colore grigio medio per maggiore visibilità */
-    stroke-opacity: 1; /* Più opache */
-    stroke-width: 1; /* Linee più spesse */
+    stroke: #bbb;
+    stroke-opacity: 1; 
+    stroke-width: 1; 
 }
 
 .grid path {
-    display: none; /* Nasconde i bordi degli assi */
+    display: none; 
 }
 
-/* Pulsanti più grandi e moderni */
-button {
-    position: absolute;
-    top: 20px;
-    right: 50px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-button:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
-}
-
-/* Stile per il menu a tendina */
 select {
-    font-family: 'Roboto', Arial, sans-serif; /* Font moderno */
-    font-size: 16px; /* Testo più grande */
-    color: #333; /* Colore del testo */
-    padding: 10px 15px; /* Spaziatura interna */
-    border: 1px solid #ccc; /* Bordi arrotondati */
-    border-radius: 8px; /* Curve eleganti */
-    background-color: #f9f9f9; /* Sfondo chiaro */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Leggera ombra */
-    cursor: pointer; /* Indica che è interattivo */
+    font-family: 'Roboto', Arial, sans-serif; 
+    font-size: 16px; 
+    color: #333; 
+    padding: 10px 15px; 
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    background-color: #f9f9f9; 
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+    cursor: pointer; 
     margin: 5px 0;
 }
 
 select:hover {
-    border-color: #007BFF; /* Colore di evidenziazione al passaggio */
+    border-color: #007BFF; 
 }
 
 select:focus {
-    outline: none; /* Rimuove il bordo di focus */
-    border-color: #0056b3; /* Colore di evidenziazione */
-    box-shadow: 0px 0px 6px rgba(0, 123, 255, 0.5); /* Effetto glow */
+    outline: none;
+    border-color: #0056b3; 
+    box-shadow: 0px 0px 6px rgba(0, 123, 255, 0.5); 
 }
 
-/* Stile per i radio button (quadratini) */
 input[type="radio"] {
-    display: none; /* Nasconde il radio button originale */
+    display: none;
 }
 
 input[type="radio"] + label {
-    font-family: 'Roboto', Arial, sans-serif; /* Font coerente */
-    font-size: 16px; /* Testo più grande */
-    color: #333; /* Colore del testo */
+    font-family: 'Roboto', Arial, sans-serif; 
+    font-size: 16px; 
+    color: #333; 
     display: inline-flex;
-    align-items: center; /* Allinea testo e quadratino */
-    gap: 10px; /* Spazio tra il quadratino e il testo */
+    align-items: center; 
+    gap: 10px; 
     padding: 5px;
-    margin: 5px 0; /* Spaziatura verticale tra i radio button */
+    margin: 5px 0;
     cursor: pointer;
 }
 
-/* Quadratino personalizzato */
 input[type="radio"] + label::before {
-    content: ''; /* Elemento per il quadratino */
+    content: ''; 
     display: inline-block;
-    width: 16px; /* Dimensione del quadrato */
+    width: 16px; 
     height: 16px;
-    border: 2px solid #007BFF; /* Bordo blu */
-    border-radius: 4px; /* Angoli arrotondati per un quadrato elegante */
-    background-color: white; /* Sfondo bianco */
-    transition: all 0.3s ease; /* Transizione per un tocco moderno */
+    border: 2px solid #007BFF; 
+    border-radius: 4px; 
+    background-color: white;
+    transition: all 0.3s ease; 
 }
 
-/* Stato selezionato */
+
 input[type="radio"]:checked + label::before {
-    background-color: #007BFF; /* Colore blu riempito quando selezionato */
-    border-color: #0056b3; /* Bordo più scuro */
+    background-color: #007BFF; 
+    border-color: #0056b3; 
 }
 
-/* Hover sul radio button */
+
 input[type="radio"] + label:hover::before {
-    border-color: #0056b3; /* Cambia colore del bordo al passaggio del mouse */
+    border-color: #0056b3; 
 }
 
-/* Layout per i controlli */
+
 .control-container {
     margin: 15px 0;
     font-size: 16px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Allinea tutto a sinistra */
-    gap: 10px; /* Spaziatura tra i controlli */
+    align-items: flex-start; 
+    gap: 10px; 
 }
 
 .back-button {
