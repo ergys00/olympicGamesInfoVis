@@ -364,8 +364,13 @@ function updateVisualization(newGeoData) {
         .transition()
         .duration(1250)
         .attr("fill", (d) => {
-            const country = newGeoData.find((c) => c.id === d.id);
-            return country !== undefined && country.totalMedals !== 0
+            const country = newGeoData.find((c) => {
+                if (c.name === d.properties.name)
+                    return true; //questo controllo in più perché per casi come il Sud Africa l'id non aveva corrispondenza
+                else if (c.id === d.id) return true;
+                else return false;
+            });
+            return (country !== undefined && country.totalMedals !== 0)
                 ? colorScale(country.totalMedals)
                 : "#eeeeee";
         });
@@ -374,6 +379,7 @@ function updateVisualization(newGeoData) {
     //aggiorno i listener relativi al tooltip da mostrare
     updateTooltipListeners(states, newGeoData);
 }
+
 
 //funzione che calcola medaglie per maschi e femmine
 function getSportsMedalsForCountry(countryId, countryName) {
